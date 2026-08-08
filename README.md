@@ -24,8 +24,8 @@ qualquer Studio.
 | --- | --- | --- |
 | 1 | Fundação: Next.js, Supabase Auth, `organizations`/`profiles`/`organization_members`, RLS, proxy de sessão, criação de Studio (onboarding) | ✅ |
 | 2 | Configurações da organização, categorias de horário, horários (`schedule_slots`) | ✅ |
-| 3 | Planos e assinaturas | ⏳ |
-| 4 | CRUD de alunos | ⏳ |
+| 3 | Planos (`plans`, categorias permitidas) | ✅ |
+| 4 | CRUD de alunos + assinaturas (vínculo aluno → plano) | ⏳ |
 | 5 | Agenda e reservas (com proteção de concorrência) | ⏳ |
 | 6 | Check-in e presença | ⏳ |
 | 7 | Financeiro e inadimplência | ⏳ |
@@ -100,9 +100,10 @@ conteúdo de `supabase/seed.sql` no SQL Editor — ele roda como `postgres` e
 tem os privilégios necessários para inserir usuários de teste diretamente.
 
 > `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 4
-> usuários, as configurações padrão e os horários (categorias
-> Premium/Alternativo, segunda a sexta); fases seguintes acrescentam
-> planos, alunos, reservas e pagamentos ao mesmo script.
+> usuários, as configurações padrão, os horários (categorias
+> Premium/Alternativo, segunda a sexta) e os 8 planos do MF Studio
+> (Bronze/Prata/Ouro/Diamante × Premium/Alternativo); fases seguintes
+> acrescentam alunos, assinaturas, reservas e pagamentos ao mesmo script.
 
 ## Rodando localmente
 
@@ -147,6 +148,7 @@ src/
 │   ├── (dashboard)/
 │   │   └── dashboard/
 │   │       ├── page.tsx           # visão geral + equipe
+│   │       ├── plans/             # CRUD de planos
 │   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
 │   ├── auth/confirm/              # route handler de confirmação de e-mail
 │   └── onboarding/                # criação da organização (primeiro acesso)
@@ -155,7 +157,8 @@ src/
 │   └── ui/                        # shadcn/ui (gerado — não editar à mão)
 ├── features/                      # lógica de domínio por módulo
 │   ├── organizations/              # organização + organization_settings
-│   └── schedules/                  # categorias + horários
+│   ├── schedules/                  # categorias + horários
+│   └── plans/                      # planos + categorias permitidas
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos)

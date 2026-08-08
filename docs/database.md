@@ -63,6 +63,41 @@ constante no código (ver `docs/business-rules.md` §"Regra de ouro").
 Fase 5 (reservas) nunca precise de uma tabela de conversão ao comparar um
 horário com uma data de calendário real.
 
+## Esquema (Fase 3)
+
+```text
+plans
+    id, organization_id → organizations, name, description,
+    price numeric(10,2), billing_cycle ('MONTHLY'|'WEEKLY'|'QUARTERLY'
+      |'YEARLY'|'CUSTOM', default 'MONTHLY'),
+    session_limit (check > 0), session_period ('WEEK'|'MONTH'),
+    active, created_at, updated_at
+    unique (organization_id, name)
+
+plan_schedule_categories          -- N:N entre plans e schedule_categories
+    plan_id → plans (on delete cascade),
+    schedule_category_id → schedule_categories (on delete restrict),
+    created_at
+    primary key (plan_id, schedule_category_id)
+```
+
+`billing_cycle` já aceita os 5 valores da especificação desde a Fase 3 —
+"estrutura preparada" significa a coluna já suportar isso agora, não que
+a UI esconda as opções; o MF Studio simplesmente só usa `MONTHLY` no seed.
+
+`plan_schedule_categories` tem um **trigger** (`validate_plan_schedule_category`)
+que impede vincular um plano de uma organização a uma categoria de
+horário de outra — mesmo que a policy de RLS já exija que o usuário seja
+`OWNER`/`ADMIN` do plano, nada nela valida sozinha que a categoria
+referenciada pertence à mesma organização. Isso é tratado como uma regra
+crítica de isolamento multi-tenant, não como validação de formulário.
+
+A função `sync_plan_categories(plan_id, category_ids[])` substitui o
+conjunto inteiro de categorias de um plano em uma única chamada (em vez de
+apagar e reinserir do cliente em duas idas ao banco, que poderiam falhar
+parcialmente). Ela roda como quem a chamou (não é `SECURITY DEFINER`), então
+RLS e o trigger acima continuam valendo normalmente.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -122,3 +157,7 @@ as categorias **Premium**/**Alternativo** e os horários de segunda a
 sexta descritos na seção 6 do briefing do produto — capacidades (8 para
 Premium, 12 para Alternativo) são apenas dados ilustrativos de seed, não
 uma regra do sistema.
+
+Desde a Fase 3, também semeia os 8 planos do MF Studio (Bronze/Prata/
+Ouro/Diamante, cada um em versão Premium e Alternativo) já vinculados à
+categoria correspondente.

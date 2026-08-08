@@ -17,11 +17,12 @@
 --   professor@mfstudio.dev  PROFESSOR
 --   aluno@mfstudio.dev      STUDENT
 --
--- Also seeds (Fase 2): organization_settings, schedule_categories
--- (Premium/Alternativo) and schedule_slots (Mon–Fri) for MF Studio.
+-- Also seeds: organization_settings, schedule_categories
+-- (Premium/Alternativo) and schedule_slots Mon–Fri (Fase 2); 8 plans
+-- (Bronze/Prata/Ouro/Diamante × Premium/Alternativo) (Fase 3).
 --
--- This file grows across phases: later phases append plans, students,
--- bookings and payments for the same MF Studio org created here.
+-- This file grows across phases: later phases append students, bookings
+-- and payments for the same MF Studio org created here.
 
 do $$
 declare
@@ -110,4 +111,36 @@ begin
   from generate_series(1, 5) as d
   cross join unnest(array['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']::time[]) as t
   on conflict (organization_id, day_of_week, start_time, end_time) do nothing;
+
+  -- 6. Plans (Fase 3). Bronze/Prata/Ouro/Diamante are seed data for MF
+  -- Studio, not a fixed tier system — any organization defines its own.
+  insert into public.plans (organization_id, name, price, billing_cycle, session_limit, session_period)
+  values
+    (v_org_id, 'Bronze', 85.00, 'MONTHLY', 2, 'WEEK'),
+    (v_org_id, 'Bronze Alternativo', 65.00, 'MONTHLY', 2, 'WEEK'),
+    (v_org_id, 'Prata', 95.00, 'MONTHLY', 3, 'WEEK'),
+    (v_org_id, 'Prata Alternativo', 75.00, 'MONTHLY', 3, 'WEEK'),
+    (v_org_id, 'Ouro', 120.00, 'MONTHLY', 5, 'WEEK'),
+    (v_org_id, 'Ouro Alternativo', 100.00, 'MONTHLY', 5, 'WEEK'),
+    (v_org_id, 'Diamante', 150.00, 'MONTHLY', 7, 'WEEK'),
+    (v_org_id, 'Diamante Alternativo', 120.00, 'MONTHLY', 7, 'WEEK')
+  on conflict (organization_id, name) do update set
+    price = excluded.price,
+    session_limit = excluded.session_limit,
+    session_period = excluded.session_period,
+    billing_cycle = excluded.billing_cycle;
+
+  -- Each plan grants access to exactly one category here — by naming
+  -- convention only ("* Alternativo" → Alternativo). plan_schedule_categories
+  -- itself supports a plan granting several categories; MF Studio's seed
+  -- just doesn't happen to use that.
+  insert into public.plan_schedule_categories (plan_id, schedule_category_id)
+  select p.id, case when p.name like '%Alternativo' then v_alternativo_id else v_premium_id end
+  from public.plans p
+  where p.organization_id = v_org_id
+    and p.name in (
+      'Bronze', 'Bronze Alternativo', 'Prata', 'Prata Alternativo',
+      'Ouro', 'Ouro Alternativo', 'Diamante', 'Diamante Alternativo'
+    )
+  on conflict (plan_id, schedule_category_id) do nothing;
 end $$;

@@ -16,6 +16,8 @@ export type OrganizationRole = "OWNER" | "ADMIN" | "PROFESSOR" | "STUDENT";
 export type MemberStatus = "ACTIVE" | "INACTIVE";
 /** 0 = Sunday … 6 = Saturday — Postgres extract(dow)/JS Date.getDay() convention. */
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type BillingCycle = "MONTHLY" | "WEEKLY" | "QUARTERLY" | "YEARLY" | "CUSTOM";
+export type SessionPeriod = "WEEK" | "MONTH";
 
 export type Database = {
   public: {
@@ -210,6 +212,73 @@ export type Database = {
           },
         ];
       };
+      plans: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          billing_cycle: BillingCycle;
+          session_limit: number;
+          session_period: SessionPeriod;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          description?: string | null;
+          price: number;
+          billing_cycle?: BillingCycle;
+          session_limit: number;
+          session_period: SessionPeriod;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["plans"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "plans_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      plan_schedule_categories: {
+        Row: {
+          plan_id: string;
+          schedule_category_id: string;
+          created_at: string;
+        };
+        Insert: {
+          plan_id: string;
+          schedule_category_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["plan_schedule_categories"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "plan_schedule_categories_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "plan_schedule_categories_schedule_category_id_fkey";
+            columns: ["schedule_category_id"];
+            isOneToOne: false;
+            referencedRelation: "schedule_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -228,6 +297,14 @@ export type Database = {
       has_role_in_org: {
         Args: { p_organization_id: string; p_roles: string[] };
         Returns: boolean;
+      };
+      plan_organization_id: {
+        Args: { p_plan_id: string };
+        Returns: string;
+      };
+      sync_plan_categories: {
+        Args: { p_plan_id: string; p_category_ids: string[] };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

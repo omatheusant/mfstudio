@@ -70,9 +70,35 @@ concordando entre si**:
 - `block_booking_when_overdue` (default `true`) mesma coisa: gravado e
   editável agora, com efeito a partir da Fase 7.
 
+## Planos (Fase 3)
+
+- Não existe Bronze/Prata/Ouro/Diamante no código — são só os nomes que o
+  seed do MF Studio escolheu. Qualquer organização cria os planos que
+  quiser, com o preço, ciclo de cobrança e limite de sessões que fizerem
+  sentido para ela.
+- **O preço fica congelado na assinatura, não no plano.** Isso ainda não
+  é relevante na Fase 3 (não existem assinaturas até a Fase 4), mas o
+  motivo de `plans.price` existir separado de uma futura
+  `subscriptions.price` é justamente esse: se o Ouro passar de R$120 para
+  R$130, assinaturas antigas não devem mudar retroativamente (seção 10
+  do briefing).
+- Um plano só pode ser criado/editado depois que a organização tem pelo
+  menos uma categoria de horário — a tela de Planos deixa isso explícito
+  em vez de permitir criar um plano "solto" que depois não reserva nada.
+- Um plano pode conceder acesso a mais de uma categoria de horário
+  simultaneamente (a tabela `plan_schedule_categories` é N:N); o MF
+  Studio simplesmente não usa essa flexibilidade no seed — cada plano ali
+  aponta para exatamente uma categoria.
+- Uma categoria vinculada a algum plano não pode ser excluída
+  (`on delete restrict`) — desative-a em vez disso. Mesma regra já valia
+  para categoria vinculada a horário (Fase 2).
+- Desativar um plano (`active = false`) não afeta assinaturas existentes
+  automaticamente — isso só passa a ter sentido prático a partir da Fase 4,
+  quando assinaturas existirem.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Alunos, professores (CRUD dedicado), planos, reservas, check-in,
+Alunos, assinaturas, professores (CRUD dedicado), reservas, check-in,
 presença, pagamentos, inadimplência, dashboard operacional e painel de TV
-chegam nas fases 3–10 — ver README. Nenhuma tela atual finge que essas
+chegam nas fases 4–10 — ver README. Nenhuma tela atual finge que essas
 funcionalidades existem.

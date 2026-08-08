@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Settings } from "lucide-react";
+import { LayoutDashboard, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -27,6 +27,12 @@ type NavItem = {
 // docs/architecture.md. Don't add placeholder links "for later".
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  {
+    href: "/dashboard/plans",
+    label: "Planos",
+    icon: Wallet,
+    roles: ["OWNER", "ADMIN"],
+  },
   {
     href: "/dashboard/settings",
     label: "Configurações",
