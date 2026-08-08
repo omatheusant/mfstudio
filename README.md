@@ -23,7 +23,7 @@ qualquer Studio.
 | Fase | Conteúdo | Status |
 | --- | --- | --- |
 | 1 | Fundação: Next.js, Supabase Auth, `organizations`/`profiles`/`organization_members`, RLS, proxy de sessão, criação de Studio (onboarding) | ✅ |
-| 2 | Configurações da organização, categorias de horário, horários (`schedule_slots`) | ⏳ |
+| 2 | Configurações da organização, categorias de horário, horários (`schedule_slots`) | ✅ |
 | 3 | Planos e assinaturas | ⏳ |
 | 4 | CRUD de alunos | ⏳ |
 | 5 | Agenda e reservas (com proteção de concorrência) | ⏳ |
@@ -99,9 +99,10 @@ Em um projeto hospedado de **desenvolvimento** (nunca em produção), cole o
 conteúdo de `supabase/seed.sql` no SQL Editor — ele roda como `postgres` e
 tem os privilégios necessários para inserir usuários de teste diretamente.
 
-> `supabase/seed.sql` cresce a cada fase: hoje cria só a organização e os 4
-> usuários; fases seguintes acrescentam horários, planos, alunos, reservas
-> e pagamentos ao mesmo script.
+> `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 4
+> usuários, as configurações padrão e os horários (categorias
+> Premium/Alternativo, segunda a sexta); fases seguintes acrescentam
+> planos, alunos, reservas e pagamentos ao mesmo script.
 
 ## Rodando localmente
 
@@ -142,17 +143,26 @@ npm run lint     # ESLint
 ```text
 src/
 ├── app/
-│   ├── (auth)/          # /login, /signup — públicas
-│   ├── (dashboard)/     # painel administrativo — autenticado
-│   ├── auth/confirm/    # route handler de confirmação de e-mail
-│   └── onboarding/      # criação da organização (primeiro acesso)
-├── features/            # lógica de domínio por módulo (organizations, ...)
+│   ├── (auth)/                    # /login, /signup — públicas
+│   ├── (dashboard)/
+│   │   └── dashboard/
+│   │       ├── page.tsx           # visão geral + equipe
+│   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
+│   ├── auth/confirm/              # route handler de confirmação de e-mail
+│   └── onboarding/                # criação da organização (primeiro acesso)
+├── components/
+│   ├── layout/                    # sidebar, menu do usuário
+│   └── ui/                        # shadcn/ui (gerado — não editar à mão)
+├── features/                      # lógica de domínio por módulo
+│   ├── organizations/              # organização + organization_settings
+│   └── schedules/                  # categorias + horários
 ├── lib/
-│   ├── auth/            # DAL (data access layer) + Server Actions de auth
-│   ├── supabase/        # clients Supabase (browser/server/admin) e proxy
-│   └── validations/     # esquemas Zod
-├── types/database.ts    # espelho do schema do Supabase
-└── proxy.ts              # equivalente ao middleware no Next.js 16
+│   ├── auth/                      # DAL (data access layer) + Server Actions de auth
+│   ├── constants/                  # opções fixas de UI (dias da semana, fusos)
+│   ├── supabase/                   # clients Supabase (browser/server/admin) e proxy
+│   └── validations/                # esquemas Zod
+├── types/database.ts              # espelho do schema do Supabase
+└── proxy.ts                       # equivalente ao middleware no Next.js 16
 supabase/
 ├── migrations/          # SQL versionado
 └── seed.sql             # dados de desenvolvimento (MF Studio)

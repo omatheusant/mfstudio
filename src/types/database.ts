@@ -14,6 +14,8 @@
 
 export type OrganizationRole = "OWNER" | "ADMIN" | "PROFESSOR" | "STUDENT";
 export type MemberStatus = "ACTIVE" | "INACTIVE";
+/** 0 = Sunday … 6 = Saturday — Postgres extract(dow)/JS Date.getDay() convention. */
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type Database = {
   public: {
@@ -99,6 +101,111 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_settings: {
+        Row: {
+          organization_id: string;
+          default_capacity: number;
+          cancellation_window_minutes: number;
+          checkin_open_minutes_before: number;
+          checkin_close_minutes_after: number;
+          block_booking_when_overdue: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          default_capacity?: number;
+          cancellation_window_minutes?: number;
+          checkin_open_minutes_before?: number;
+          checkin_close_minutes_after?: number;
+          block_booking_when_overdue?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["organization_settings"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      schedule_categories: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          description: string | null;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          description?: string | null;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["schedule_categories"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "schedule_categories_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      schedule_slots: {
+        Row: {
+          id: string;
+          organization_id: string;
+          schedule_category_id: string;
+          day_of_week: DayOfWeek;
+          start_time: string;
+          end_time: string;
+          capacity: number;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          schedule_category_id: string;
+          day_of_week: DayOfWeek;
+          start_time: string;
+          end_time: string;
+          capacity: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["schedule_slots"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "schedule_slots_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "schedule_slots_schedule_category_id_fkey";
+            columns: ["schedule_category_id"];
+            isOneToOne: false;
+            referencedRelation: "schedule_categories";
             referencedColumns: ["id"];
           },
         ];

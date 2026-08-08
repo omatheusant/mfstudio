@@ -17,8 +17,11 @@
 --   professor@mfstudio.dev  PROFESSOR
 --   aluno@mfstudio.dev      STUDENT
 --
--- This file grows across phases: later phases append schedules, plans,
--- students, bookings and payments for the same MF Studio org created here.
+-- Also seeds (Fase 2): organization_settings, schedule_categories
+-- (Premium/Alternativo) and schedule_slots (Mon–Fri) for MF Studio.
+--
+-- This file grows across phases: later phases append plans, students,
+-- bookings and payments for the same MF Studio org created here.
 
 do $$
 declare
@@ -27,6 +30,8 @@ declare
   v_prof_id uuid := '00000000-0000-0000-0000-000000000003';
   v_student_id uuid := '00000000-0000-0000-0000-000000000004';
   v_org_id uuid;
+  v_premium_id uuid;
+  v_alternativo_id uuid;
   v_password text := 'elevofit123';
 begin
   -- 1. Fake auth users (idempotent: safe to re-run).
@@ -68,4 +73,41 @@ begin
     (v_org_id, v_prof_id, 'PROFESSOR', 'ACTIVE'),
     (v_org_id, v_student_id, 'STUDENT', 'ACTIVE')
   on conflict (organization_id, user_id) do update set role = excluded.role, status = excluded.status;
+
+  -- 3. Default organization_settings (Fase 2). Values below just repeat
+  -- the column defaults — spelled out here so this seed stays correct
+  -- even if the defaults ever change.
+  insert into public.organization_settings (
+    organization_id, default_capacity, cancellation_window_minutes,
+    checkin_open_minutes_before, checkin_close_minutes_after, block_booking_when_overdue
+  )
+  values (v_org_id, 8, 120, 60, 15, true)
+  on conflict (organization_id) do nothing;
+
+  -- 4. Schedule categories (Fase 2). MF Studio's own configuration —
+  -- these names are seed data, not something the app logic knows about.
+  insert into public.schedule_categories (organization_id, name, description)
+  values (v_org_id, 'Premium', 'Horários de maior procura: início da manhã e fim de tarde/noite.')
+  on conflict (organization_id, name) do update set description = excluded.description
+  returning id into v_premium_id;
+
+  insert into public.schedule_categories (organization_id, name, description)
+  values (v_org_id, 'Alternativo', 'Horários de menor procura, ao longo do meio do dia.')
+  on conflict (organization_id, name) do update set description = excluded.description
+  returning id into v_alternativo_id;
+
+  -- 5. Schedule slots (Fase 2), Monday(1)–Friday(5). Capacities below are
+  -- illustrative seed data, not a rule of the system — every organization
+  -- configures its own.
+  insert into public.schedule_slots (organization_id, schedule_category_id, day_of_week, start_time, end_time, capacity)
+  select v_org_id, v_premium_id, d, t, t + interval '1 hour', 8
+  from generate_series(1, 5) as d
+  cross join unnest(array['05:00', '06:00', '07:00', '17:00', '18:00', '19:00', '20:00']::time[]) as t
+  on conflict (organization_id, day_of_week, start_time, end_time) do nothing;
+
+  insert into public.schedule_slots (organization_id, schedule_category_id, day_of_week, start_time, end_time, capacity)
+  select v_org_id, v_alternativo_id, d, t, t + interval '1 hour', 12
+  from generate_series(1, 5) as d
+  cross join unnest(array['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']::time[]) as t
+  on conflict (organization_id, day_of_week, start_time, end_time) do nothing;
 end $$;

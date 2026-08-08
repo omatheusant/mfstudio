@@ -1,7 +1,50 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import type { OrganizationRole } from "@/types/database";
+import type { Database, OrganizationRole } from "@/types/database";
+
+export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
+export type OrganizationSettingsRow =
+  Database["public"]["Tables"]["organization_settings"]["Row"];
+
+export async function getOrganization(organizationId: string): Promise<OrganizationRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("*")
+    .eq("id", organizationId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[organizations] failed to load organization:", error.message);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * The organization's own settings row (Fase 2). Always exists — created
+ * automatically by `create_organization()` — so a null result here means
+ * either a data bug or that the caller isn't a member (RLS hid the row).
+ */
+export async function getOrganizationSettings(
+  organizationId: string,
+): Promise<OrganizationSettingsRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_settings")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[organizations] failed to load settings:", error.message);
+    return null;
+  }
+
+  return data;
+}
 
 export type OrganizationMemberRow = {
   id: string;

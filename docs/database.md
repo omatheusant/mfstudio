@@ -26,6 +26,43 @@ Toda tabela de negócio futura (planos, horários, alunos, reservas,
 check-ins, pagamentos...) terá uma coluna `organization_id` não nula
 referenciando `organizations(id)`, seguindo exatamente este padrão.
 
+## Esquema (Fase 2)
+
+```text
+organization_settings             -- 1:1 com organizations
+    organization_id (pk, → organizations),
+    default_capacity (default 8),
+    cancellation_window_minutes (default 120),
+    checkin_open_minutes_before (default 60),
+    checkin_close_minutes_after (default 15),
+    block_booking_when_overdue (default true),
+    created_at, updated_at
+
+schedule_categories
+    id, organization_id → organizations, name, description, active,
+    created_at, updated_at
+    unique (organization_id, name)
+
+schedule_slots
+    id, organization_id → organizations,
+    schedule_category_id → schedule_categories (on delete restrict),
+    day_of_week (0=domingo … 6=sábado, convenção do Postgres/JS),
+    start_time, end_time (check end_time > start_time),
+    capacity (check > 0), active, created_at, updated_at
+    unique (organization_id, day_of_week, start_time, end_time)
+```
+
+Todo `organization_settings` é criado automaticamente por
+`create_organization()` (nunca fica sem linha) — ver
+`20260808130005_extend_create_organization.sql`. `schedule_slots.capacity`
+e `schedule_category_id` são sempre configuração por linha, nunca uma
+constante no código (ver `docs/business-rules.md` §"Regra de ouro").
+
+`schedule_slots.day_of_week` usa `0 = domingo … 6 = sábado` — o mesmo que
+`Date.getDay()` no JS e `extract(dow from date)` no Postgres, para que a
+Fase 5 (reservas) nunca precise de uma tabela de conversão ao comparar um
+horário com uma data de calendário real.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -79,3 +116,9 @@ papel). Insere diretamente em `auth.users`/`auth.identities` (senha
 `elevofit123` via `crypt()`/`pgcrypto`) para permitir login imediato sem
 passar pelo fluxo de confirmação de e-mail. **Nunca rode este script em um
 projeto de produção.**
+
+Desde a Fase 2, também semeia `organization_settings` (valores padrão),
+as categorias **Premium**/**Alternativo** e os horários de segunda a
+sexta descritos na seção 6 do briefing do produto — capacidades (8 para
+Premium, 12 para Alternativo) são apenas dados ilustrativos de seed, não
+uma regra do sistema.

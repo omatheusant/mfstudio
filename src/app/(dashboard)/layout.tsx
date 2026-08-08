@@ -1,16 +1,21 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { logout } from "@/lib/auth/actions";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { UserMenu } from "@/components/layout/user-menu";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { getMemberships, requireUser } from "@/lib/auth/dal";
-import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireUser();
+  const user = await requireUser();
   const memberships = await getMemberships();
 
   if (memberships.length === 0) {
@@ -24,29 +29,21 @@ export default async function DashboardLayout({
   const primary = memberships[0];
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">
-              E
-            </span>
-            ELEVO FIT
-          </Link>
-          {primary.organization ? (
-            <>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-sm font-medium">{primary.organization.name}</span>
-            </>
-          ) : null}
-        </div>
-        <form action={logout}>
-          <Button type="submit" variant="ghost" size="sm">
-            Sair
-          </Button>
-        </form>
-      </header>
-      <main className="flex-1 p-6">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar
+        organizationName={primary.organization?.name ?? ""}
+        role={primary.role}
+      />
+      <SidebarInset>
+        <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-5" />
+          </div>
+          <UserMenu email={user.email} />
+        </header>
+        <main className="flex-1 p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

@@ -41,9 +41,38 @@ concordando entre si**:
 - Um usuário só edita o próprio perfil. Só vê o perfil de outro usuário se
   compartilharem pelo menos uma organização ativa em comum.
 
+## Configuração do Studio (Fase 2)
+
+- Dados do Studio (nome, telefone, e-mail, endereço, fuso horário) e as
+  configurações de agenda/financeiro (`organization_settings`) só podem
+  ser editados por `OWNER`/`ADMIN` — reforçado em três lugares: o item de
+  menu "Configurações" nem aparece para `PROFESSOR`/`STUDENT`
+  (`app-sidebar.tsx`), a própria página chama `requireRole` no servidor, e
+  a RLS de `organizations`/`organization_settings` rejeita a escrita
+  independentemente do que a UI faça.
+- **Categorias de horário são 100% configuráveis por organização.** Não
+  existe "Premium"/"Alternativo" no código — são apenas os nomes que o
+  seed do MF Studio escolheu. Qualquer organização cria as categorias que
+  quiser (ex.: "Manhã"/"Tarde"/"Noite").
+- **Capacidade é por horário, não uma constante do sistema.**
+  `organization_settings.default_capacity` é só um valor sugerido ao
+  criar um novo horário — cada `schedule_slot.capacity` pode ser
+  diferente.
+- Uma categoria em uso por algum horário não pode ser excluída (o banco
+  rejeita com `on delete restrict`); a UI traduz isso em uma mensagem
+  amigável em vez de deixar o erro do Postgres vazar. Desativá-la
+  (`active = false`) é sempre possível.
+- Janela de cancelamento (`cancellation_window_minutes`) e janela de
+  check-in (`checkin_open_minutes_before`/`checkin_close_minutes_after`)
+  estão configuráveis desde já, mas só passam a ter efeito quando as
+  Fases 5/6 (reservas e check-in) lerem esses valores — configurá-las
+  agora não muda comportamento nenhum ainda.
+- `block_booking_when_overdue` (default `true`) mesma coisa: gravado e
+  editável agora, com efeito a partir da Fase 7.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Alunos, professores (CRUD dedicado), planos, horários, reservas, check-in,
+Alunos, professores (CRUD dedicado), planos, reservas, check-in,
 presença, pagamentos, inadimplência, dashboard operacional e painel de TV
-chegam nas fases 2–10 — ver README. Nenhuma tela atual finge que essas
+chegam nas fases 3–10 — ver README. Nenhuma tela atual finge que essas
 funcionalidades existem.
