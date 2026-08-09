@@ -27,7 +27,7 @@ qualquer Studio.
 | 3 | Planos (`plans`, categorias permitidas) | ✅ |
 | 4 | CRUD de alunos + assinaturas (`students`, `subscriptions`) | ✅ |
 | 5 | Agenda e reservas (`bookings`, com proteção de concorrência) | ✅ |
-| 6 | Check-in e presença | ⏳ |
+| 6 | Check-in e presença (`checkins`) | ✅ |
 | 7 | Financeiro e inadimplência | ⏳ |
 | 8 | Dashboard administrativo | ⏳ |
 | 9 | Portal do aluno | ⏳ |
@@ -114,8 +114,9 @@ tem os privilégios necessários para inserir usuários de teste diretamente.
 > `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 7
 > usuários (3 equipe + 4 alunos com assinaturas), as configurações
 > padrão, os horários (categorias Premium/Alternativo, segunda a sexta),
-> os 8 planos do MF Studio e algumas reservas futuras; fases seguintes
-> acrescentam check-ins e pagamentos ao mesmo script.
+> os 8 planos do MF Studio, algumas reservas futuras e duas reservas
+> passadas com presença registrada (uma presente, uma falta); fases
+> seguintes acrescentam pagamentos ao mesmo script.
 
 ## Rodando localmente
 
@@ -134,8 +135,10 @@ Abra [http://localhost:3000](http://localhost:3000).
   configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
   qualquer um dos e-mails da tabela acima. Como `OWNER`/`ADMIN`/`PROFESSOR`,
-  veja a ocupação do dia em **Agenda**; como aluno (`aluno@mfstudio.dev`,
-  por exemplo), reserve uma aula em **Reservar aula**.
+  veja a ocupação do dia em **Agenda** e marque presença/falta por lá;
+  como aluno (`aluno@mfstudio.dev`, por exemplo), reserve uma aula em
+  **Reservar aula** e faça check-in no dia (dentro da janela configurada
+  em Configurações → Agenda e financeiro).
 
 ## Variáveis de ambiente
 
@@ -181,7 +184,8 @@ src/
 │   ├── schedules/                  # categorias + horários
 │   ├── plans/                      # planos + categorias permitidas
 │   ├── students/                   # alunos + assinaturas (convite via admin API)
-│   └── bookings/                   # reservas (RPCs create_booking/cancel_booking)
+│   ├── bookings/                   # reservas (RPCs create_booking/cancel_booking)
+│   └── checkins/                   # presença (RPCs student_checkin/mark_attendance)
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)

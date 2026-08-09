@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { getMemberships, requireRole } from "@/lib/auth/dal";
 import { getUpcomingBookingsForStudent } from "@/features/bookings/queries";
+import { getAttendanceHistory } from "@/features/checkins/queries";
 import { getPlans } from "@/features/plans/queries";
 import { getStudent } from "@/features/students/queries";
 import { formatCurrency } from "@/lib/utils";
@@ -52,7 +53,10 @@ export default async function StudentDetailPage({
     notFound();
   }
 
-  const upcomingBookings = await getUpcomingBookingsForStudent(student.id);
+  const [upcomingBookings, attendanceHistory] = await Promise.all([
+    getUpcomingBookingsForStudent(student.id),
+    getAttendanceHistory(student.id),
+  ]);
 
   const activeSubscription = student.subscriptions.find((s) => s.status === "ACTIVE");
   const activePlans = plans.filter((plan) => plan.active);
@@ -207,10 +211,38 @@ export default async function StudentDetailPage({
           <Card>
             <CardHeader>
               <CardTitle>Histórico de presença</CardTitle>
-              <CardDescription>Disponível a partir da Fase 6 (Check-in e presença).</CardDescription>
+              <CardDescription>
+                Marcada pelo próprio aluno (check-in) ou pela equipe, na Agenda.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Nenhum registro ainda.</p>
+              {attendanceHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum registro ainda.</p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {attendanceHistory.map((entry) => (
+                    <li
+                      key={entry.booking_id}
+                      className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("pt-BR", {
+                            weekday: "short",
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}{" "}
+                          · {entry.start_time.slice(0, 5)}–{entry.end_time.slice(0, 5)}
+                        </p>
+                        <p className="text-muted-foreground">{entry.category_name}</p>
+                      </div>
+                      <Badge variant={entry.status === "COMPLETED" ? "default" : "secondary"}>
+                        {entry.status === "COMPLETED" ? "Presente" : "Faltou"}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

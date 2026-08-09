@@ -21,6 +21,7 @@ export type SessionPeriod = "WEEK" | "MONTH";
 export type StudentStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionStatus = "ACTIVE" | "INACTIVE" | "CANCELLED" | "SUSPENDED";
 export type BookingStatus = "RESERVED" | "CANCELLED" | "CANCELLED_LATE" | "COMPLETED" | "NO_SHOW";
+export type CheckinStatus = "PRESENT" | "ABSENT";
 
 export type Database = {
   public: {
@@ -423,6 +424,54 @@ export type Database = {
           },
         ];
       };
+      checkins: {
+        Row: {
+          id: string;
+          organization_id: string;
+          booking_id: string;
+          student_id: string;
+          status: CheckinStatus;
+          checked_in_at: string;
+          checked_in_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          booking_id: string;
+          student_id: string;
+          status: CheckinStatus;
+          checked_in_at?: string;
+          checked_in_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["checkins"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "checkins_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: true;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -461,6 +510,14 @@ export type Database = {
       cancel_booking: {
         Args: { p_booking_id: string };
         Returns: Database["public"]["Tables"]["bookings"]["Row"];
+      };
+      student_checkin: {
+        Args: { p_booking_id: string };
+        Returns: Database["public"]["Tables"]["checkins"]["Row"];
+      };
+      mark_attendance: {
+        Args: { p_booking_id: string; p_status: string };
+        Returns: Database["public"]["Tables"]["checkins"]["Row"];
       };
     };
     Enums: Record<string, never>;

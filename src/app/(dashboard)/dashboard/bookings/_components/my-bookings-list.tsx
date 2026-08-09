@@ -5,9 +5,21 @@ import { toast } from "sonner";
 
 import { cancelBookingAction } from "@/features/bookings/actions";
 import type { UpcomingBooking } from "@/features/bookings/queries";
+import { checkInAction } from "@/features/checkins/actions";
 import { Button } from "@/components/ui/button";
 
-export function MyBookingsList({ bookings }: { bookings: UpcomingBooking[] }) {
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function MyBookingsList({
+  bookings,
+  showCheckIn = false,
+}: {
+  bookings: UpcomingBooking[];
+  /** Only meaningful when the viewer IS the booking's own student — student_checkin() rejects staff. */
+  showCheckIn?: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
 
   function cancel(bookingId: string) {
@@ -17,6 +29,17 @@ export function MyBookingsList({ bookings }: { bookings: UpcomingBooking[] }) {
         toast.error(result.error);
       } else {
         toast.success("Reserva cancelada.");
+      }
+    });
+  }
+
+  function checkIn(bookingId: string) {
+    startTransition(async () => {
+      const result = await checkInAction(bookingId);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Check-in realizado!");
       }
     });
   }
@@ -43,14 +66,21 @@ export function MyBookingsList({ bookings }: { bookings: UpcomingBooking[] }) {
             </p>
             <p className="text-muted-foreground">{booking.category_name}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={isPending}
-            onClick={() => cancel(booking.id)}
-          >
-            Cancelar
-          </Button>
+          <div className="flex items-center gap-1">
+            {showCheckIn && booking.date === todayISO() ? (
+              <Button size="sm" disabled={isPending} onClick={() => checkIn(booking.id)}>
+                Check-in
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isPending}
+              onClick={() => cancel(booking.id)}
+            >
+              Cancelar
+            </Button>
+          </div>
         </li>
       ))}
     </ul>

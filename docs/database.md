@@ -207,6 +207,33 @@ privilégios de quem chamou, então a RLS de `schedule_slots`/`students`/
 — é uma segunda camada de proteção independente das checagens explícitas
 na função, não uma redundância inútil.
 
+## Esquema (Fase 6)
+
+```text
+checkins
+    id, organization_id → organizations, booking_id → bookings
+      (on delete cascade), student_id → students (on delete cascade),
+    status ('PRESENT'|'ABSENT'), checked_in_at, checked_in_by → profiles,
+    created_at, updated_at
+    unique (booking_id)
+```
+
+Assim como `bookings`, `checkins` nunca é escrita diretamente — só através
+de `student_checkin(p_booking_id)` (auto check-in do próprio aluno) ou
+`mark_attendance(p_booking_id, p_status)` (equipe marca presença/falta,
+inclusive corrigindo um check-in já feito). Ambas, ao gravar um
+`checkins`, também atualizam `bookings.status` para `COMPLETED` (presente)
+ou `NO_SHOW` (faltou) — `bookings.status` continua sendo a fonte da
+verdade sobre "o que aconteceu"; `checkins` é o log de auditoria de
+quem/quando.
+
+`student_checkin` usa exatamente o mesmo padrão de `cancel_booking` para
+decidir a janela: `bookings.date + schedule_slots.start_time`,
+interpretado no fuso da organização, comparado com
+`organization_settings.checkin_open_minutes_before`/
+`checkin_close_minutes_after`. Fora da janela, a função recusa com uma
+mensagem clara em vez de deixar o aluno adivinhar por quê.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -283,3 +310,11 @@ diretamente na tabela, não via `create_booking()`, porque o seed roda
 fora de uma sessão de usuário (`auth.uid()` seria nulo). A trigger
 `validate_booking` ainda roda normalmente e funciona como um teste de
 sanidade sobre os dados do próprio seed.
+
+Desde a Fase 6, também semeia duas reservas passadas com resultado já
+registrado — uma `COMPLETED`/`PRESENT` (João) e uma `NO_SHOW`/`ABSENT`
+(Beatriz) — para a aba "Histórico de presença" ter algo real pra
+mostrar. Mesmo raciocínio: inseridas diretamente, não via
+`student_checkin()`/`mark_attendance()`, com `where not exists` no lugar
+do índice único parcial (que só cobre `status = 'RESERVED'`) para manter
+o script idempotente.

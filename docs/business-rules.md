@@ -177,9 +177,35 @@ direto. O aluno reserva em `/dashboard/bookings`; a versão com o
 dashboard completo do portal (seção 23 do briefing) chega na Fase 9 —
 por enquanto o fluxo é funcional, só ainda não visualmente dedicado.
 
+## Check-in e presença (Fase 6)
+
+Duas formas de registrar o que aconteceu numa reserva, ambas gravando um
+`checkins` e movendo `bookings.status` para `COMPLETED` (presente) ou
+`NO_SHOW` (faltou) — nunca uma sem a outra:
+
+- **Auto check-in do aluno** (`student_checkin`): só funciona para a
+  própria reserva, só quando `status = 'RESERVED'`, e só dentro da
+  janela configurada — `checkin_open_minutes_before` antes do início da
+  aula até `checkin_close_minutes_after` depois, calculado no fuso da
+  organização (seção 16 do briefing). Fora da janela, mensagem clara em
+  vez de deixar o aluno adivinhar por quê. No MVP essa janela é global
+  por organização — não configurável por horário individual — ver seção
+  16 do briefing ("implementar primeiro uma janela simples").
+- **Marcação manual pela equipe** (`mark_attendance`, `OWNER`/`ADMIN`/
+  `PROFESSOR`): marca presente ou faltou em qualquer reserva que não
+  esteja cancelada, a partir da Agenda. Pode corrigir uma marcação
+  anterior (ex.: aluno chegou atrasado e a equipe já tinha marcado
+  falta) — não é um registro de mão única.
+- Uma reserva cancelada (`CANCELLED`/`CANCELLED_LATE`) nunca pode
+  receber presença — não existe "check-in de uma aula que o aluno já
+  cancelou".
+- O histórico de presença do aluno (aba "Presença" no detalhe do aluno)
+  é derivado diretamente de `bookings.status`, não de uma tabela
+  separada de histórico — a mesma fonte que a Fase 5 usa para contar
+  sessões usadas no período.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Professores (CRUD dedicado), check-in, presença, pagamentos,
-inadimplência, dashboard operacional e painel de TV chegam nas fases
-6–10 — ver README. Nenhuma tela atual finge que essas funcionalidades
-existem.
+Professores (CRUD dedicado), pagamentos, inadimplência, dashboard
+operacional e painel de TV chegam nas fases 7–10 — ver README. Nenhuma
+tela atual finge que essas funcionalidades existem.

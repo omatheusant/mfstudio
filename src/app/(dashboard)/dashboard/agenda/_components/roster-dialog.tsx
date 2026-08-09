@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { cancelBookingAction } from "@/features/bookings/actions";
 import type { RosterEntry } from "@/features/bookings/queries";
+import { markAttendanceAction } from "@/features/checkins/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,7 @@ import {
 
 const STATUS_LABEL: Record<string, string> = {
   RESERVED: "Reservado",
-  COMPLETED: "Concluído",
+  COMPLETED: "Presente",
   NO_SHOW: "Faltou",
 };
 
@@ -39,6 +40,17 @@ export function RosterDialog({
         toast.error(result.error);
       } else {
         toast.success("Reserva cancelada.");
+      }
+    });
+  }
+
+  function markAttendance(bookingId: string, status: "PRESENT" | "ABSENT") {
+    startTransition(async () => {
+      const result = await markAttendanceAction(bookingId, status);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(status === "PRESENT" ? "Presença marcada." : "Falta marcada.");
       }
     });
   }
@@ -64,15 +76,44 @@ export function RosterDialog({
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{STATUS_LABEL[entry.status] ?? entry.status}</Badge>
                   {entry.status === "RESERVED" ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => markAttendance(entry.id, "PRESENT")}
+                      >
+                        Presente
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => markAttendance(entry.id, "ABSENT")}
+                      >
+                        Faltou
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => cancel(entry.id)}
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  ) : (
                     <Button
                       variant="ghost"
                       size="sm"
                       disabled={isPending}
-                      onClick={() => cancel(entry.id)}
+                      onClick={() =>
+                        markAttendance(entry.id, entry.status === "COMPLETED" ? "ABSENT" : "PRESENT")
+                      }
                     >
-                      Cancelar
+                      Corrigir
                     </Button>
-                  ) : null}
+                  )}
                 </div>
               </li>
             ))}

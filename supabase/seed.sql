@@ -23,10 +23,11 @@
 -- Also seeds: organization_settings, schedule_categories
 -- (Premium/Alternativo) and schedule_slots Mon-Fri (Fase 2); 8 plans
 -- (Bronze/Prata/Ouro/Diamante x Premium/Alternativo) (Fase 3); 4 students
--- with subscriptions (Fase 4); a few upcoming bookings (Fase 5).
+-- with subscriptions (Fase 4); a few upcoming bookings (Fase 5); two past
+-- bookings with checkins, one PRESENT and one ABSENT (Fase 6).
 --
--- This file grows across phases: later phases append checkins and
--- payments for the same MF Studio org created here.
+-- This file grows across phases: later phases append payments for the
+-- same MF Studio org created here.
 
 do $$
 declare
@@ -40,8 +41,14 @@ declare
   v_org_id uuid;
   v_premium_id uuid;
   v_alternativo_id uuid;
+  v_past_monday date;
+  v_completed_booking_id uuid;
+  v_absent_booking_id uuid;
   v_password text := 'elevofit123';
 begin
+  -- Monday of last week — always safely in the past regardless of when
+  -- the seed is run, for the attendance-history example bookings below.
+  v_past_monday := date_trunc('week', current_date)::date - 7;
   -- 1. Fake auth users (idempotent: safe to re-run).
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
@@ -212,4 +219,46 @@ begin
       or (s.profile_id = v_student2_id and ss.schedule_category_id = v_alternativo_id and ss.start_time = '10:00')
     )
   on conflict do nothing;
+
+  -- 9. Checkins (Fase 6). Two past bookings with an outcome already
+  -- recorded, so "Histórico de presença" has something real to show.
+  -- Inserted directly for the same reason as the bookings above — the
+  -- validate_booking/validate_checkin triggers still run as a sanity
+  -- check. Not covered by the RESERVED-only partial unique index, so
+  -- `where not exists` keeps re-running the seed idempotent.
+  insert into public.bookings (organization_id, student_id, schedule_slot_id, date, status)
+  select v_org_id, s.id, ss.id, v_past_monday, 'COMPLETED'
+  from public.students s
+  join public.schedule_slots ss on ss.organization_id = v_org_id
+  where s.profile_id = v_student_id
+    and ss.schedule_category_id = v_premium_id
+    and ss.start_time = '18:00'
+    and not exists (
+      select 1 from public.bookings b
+      where b.student_id = s.id and b.schedule_slot_id = ss.id and b.date = v_past_monday
+    )
+  returning id into v_completed_booking_id;
+
+  if v_completed_booking_id is not null then
+    insert into public.checkins (organization_id, booking_id, student_id, status, checked_in_by)
+    values (v_org_id, v_completed_booking_id, v_student_id, 'PRESENT', v_student_id);
+  end if;
+
+  insert into public.bookings (organization_id, student_id, schedule_slot_id, date, status)
+  select v_org_id, s.id, ss.id, v_past_monday + 2, 'NO_SHOW'
+  from public.students s
+  join public.schedule_slots ss on ss.organization_id = v_org_id
+  where s.profile_id = v_student4_id
+    and ss.schedule_category_id = v_premium_id
+    and ss.start_time = '19:00'
+    and not exists (
+      select 1 from public.bookings b
+      where b.student_id = s.id and b.schedule_slot_id = ss.id and b.date = v_past_monday + 2
+    )
+  returning id into v_absent_booking_id;
+
+  if v_absent_booking_id is not null then
+    insert into public.checkins (organization_id, booking_id, student_id, status, checked_in_by)
+    values (v_org_id, v_absent_booking_id, v_student4_id, 'ABSENT', v_admin_id);
+  end if;
 end $$;

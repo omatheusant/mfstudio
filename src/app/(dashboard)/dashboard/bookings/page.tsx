@@ -121,7 +121,7 @@ export default async function BookingsPage({
           <CardDescription>Próximas aulas reservadas.</CardDescription>
         </CardHeader>
         <CardContent>
-          <MyBookingsList bookings={upcoming} />
+          <MyBookingsList bookings={upcoming} showCheckIn />
         </CardContent>
       </Card>
     </div>
