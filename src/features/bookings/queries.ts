@@ -193,7 +193,8 @@ export async function getUpcomingBookingsForStudent(
     .eq("student_id", studentId)
     .eq("status", "RESERVED")
     .gte("date", today)
-    .order("date");
+    .order("date")
+    .order("start_time", { referencedTable: "schedule_slot" });
 
   if (error) {
     console.error("[bookings] failed to load upcoming bookings:", error.message);

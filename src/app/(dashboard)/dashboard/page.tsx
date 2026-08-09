@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 
-import { getMemberships } from "@/lib/auth/dal";
-import { getRoster, getSlotsForDate } from "@/features/bookings/queries";
+import { getMemberships, requireUser } from "@/lib/auth/dal";
+import {
+  getRoster,
+  getSessionsUsedInCurrentPeriod,
+  getSlotsForDate,
+  getUpcomingBookingsForStudent,
+} from "@/features/bookings/queries";
 import { getDashboardMetrics } from "@/features/dashboard/queries";
 import { getOrganizationMembers } from "@/features/organizations/queries";
+import { getStudentByProfileId } from "@/features/students/queries";
+import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -23,6 +30,7 @@ import {
 import type { OrganizationRole } from "@/types/database";
 
 import { MetricsCards } from "./_components/metrics-cards";
+import { StudentHome, type StudentHomePlan } from "./_components/student-home";
 import { TodayAgenda } from "./_components/today-agenda";
 
 export const metadata: Metadata = {
@@ -47,6 +55,36 @@ export default async function DashboardPage() {
   // Guarded by (dashboard)/layout.tsx already; this is just for TypeScript.
   if (!primary?.organization) {
     return null;
+  }
+
+  if (primary.role === "STUDENT") {
+    const user = await requireUser();
+    const supabase = await createClient();
+    const [{ data: profile }, student] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+      getStudentByProfileId(primary.organization_id, user.id),
+    ]);
+
+    const activeSubscription = student?.subscriptions.find((s) => s.status === "ACTIVE");
+    let plan: StudentHomePlan | null = null;
+    let nextClass = null;
+
+    if (student && activeSubscription?.plan) {
+      const [sessionsUsed, upcoming] = await Promise.all([
+        getSessionsUsedInCurrentPeriod(student.id, activeSubscription.plan.session_period),
+        getUpcomingBookingsForStudent(student.id),
+      ]);
+      plan = {
+        name: activeSubscription.plan.name,
+        price: activeSubscription.price,
+        sessionLimit: activeSubscription.plan.session_limit,
+        sessionPeriod: activeSubscription.plan.session_period,
+        sessionsUsed,
+      };
+      nextClass = upcoming[0] ?? null;
+    }
+
+    return <StudentHome fullName={profile?.full_name ?? null} plan={plan} nextClass={nextClass} />;
   }
 
   if (primary.role !== "OWNER" && primary.role !== "ADMIN") {

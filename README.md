@@ -30,7 +30,7 @@ qualquer Studio.
 | 6 | Check-in e presença (`checkins`) | ✅ |
 | 7 | Financeiro e inadimplência (`payments`, bloqueio de reserva) | ✅ |
 | 8 | Dashboard administrativo (indicadores + agenda do dia) | ✅ |
-| 9 | Portal do aluno | ⏳ |
+| 9 | Portal do aluno (home consolidada + Meu perfil) | ✅ |
 | 10 | Painel de TV (`/studio/display`) | ⏳ |
 | 11 | Testes das regras críticas, seed completo, documentação final | ⏳ |
 
@@ -139,10 +139,11 @@ Abra [http://localhost:3000](http://localhost:3000).
   negócio (alunos ativos/inadimplentes, receita, ocupação); veja a
   ocupação do dia em **Agenda** e marque presença/falta por lá, e
   gerencie cobranças em **Pagamentos** (a Maria já entra como
-  inadimplente); como aluno (`aluno@mfstudio.dev`, por exemplo), reserve
-  uma aula em **Reservar aula**, faça check-in no dia (dentro da janela
-  configurada em Configurações → Agenda e financeiro) e veja suas
-  cobranças em **Pagamentos**.
+  inadimplente); como aluno (`aluno@mfstudio.dev`, por exemplo), a home
+  já mostra seu plano, sessões usadas e próxima aula — reserve uma aula,
+  faça check-in no dia (dentro da janela configurada em Configurações →
+  Agenda e financeiro) e veja suas cobranças, tudo a partir dos botões
+  da home.
 
 ## Variáveis de ambiente
 
@@ -171,12 +172,13 @@ src/
 │   ├── (auth)/                    # /login, /signup — públicas
 │   ├── (dashboard)/
 │   │   └── dashboard/
-│   │       ├── page.tsx           # visão geral + equipe
+│   │       ├── page.tsx           # dashboard (equipe) / home do portal (aluno)
 │   │       ├── students/          # lista + detalhe (CRUD de alunos e assinaturas)
 │   │       ├── plans/             # CRUD de planos
 │   │       ├── agenda/            # ocupação do dia + lista de alunos por horário (equipe)
 │   │       ├── bookings/          # reservar aula + minhas reservas (aluno)
 │   │       ├── payments/          # cobranças (equipe) / meus pagamentos (aluno)
+│   │       ├── profile/           # meu perfil (todos os papéis)
 │   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
 │   ├── auth/confirm/              # route handler de confirmação de e-mail / convite
 │   ├── onboarding/                # criação da organização (primeiro acesso)
@@ -192,7 +194,8 @@ src/
 │   ├── bookings/                   # reservas (RPCs create_booking/cancel_booking)
 │   ├── checkins/                   # presença (RPCs student_checkin/mark_attendance)
 │   ├── payments/                   # pagamentos + view payments_with_status (inadimplência)
-│   └── dashboard/                  # indicadores de negócio (agrega os módulos acima)
+│   ├── dashboard/                  # indicadores de negócio (agrega os módulos acima)
+│   └── profile/                    # edição do próprio perfil
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)

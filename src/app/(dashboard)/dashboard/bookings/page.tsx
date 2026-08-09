@@ -115,10 +115,12 @@ export default async function BookingsPage({
         </Card>
       )}
 
-      <Card>
+      <Card id="minhas-reservas">
         <CardHeader>
           <CardTitle>Minhas reservas</CardTitle>
-          <CardDescription>Próximas aulas reservadas.</CardDescription>
+          <CardDescription>
+            Próximas aulas reservadas. O check-in aparece aqui no dia da aula.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <MyBookingsList bookings={upcoming} showCheckIn />

@@ -1,6 +1,14 @@
 "use client";
 
-import { CalendarDays, CreditCard, LayoutDashboard, Settings, Users, Wallet } from "lucide-react";
+import {
+  CalendarDays,
+  CreditCard,
+  LayoutDashboard,
+  Settings,
+  User,
+  Users,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -63,6 +71,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: Settings,
     roles: ["OWNER", "ADMIN"],
   },
+  { href: "/dashboard/profile", label: "Meu perfil", icon: User },
 ];
 
 export function AppSidebar({

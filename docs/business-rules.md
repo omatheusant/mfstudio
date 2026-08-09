@@ -265,8 +265,39 @@ uma home própria. Definições exatas dos indicadores — para não
   `/dashboard/agenda`, resumida — clicar em "Ver" abre o mesmo diálogo
   de lista de alunos com marcação de presença.
 
+## Portal do aluno (Fase 9)
+
+A funcionalidade do portal (reservar, cancelar, check-in, ver
+pagamentos) já existia desde as Fases 5–7; a Fase 9 entrega a
+**experiência consolidada** que a seção 23 do briefing descreve:
+
+- `/dashboard` para um `STUDENT` deixa de mostrar a lista de equipe
+  (isso agora é exclusivo de `PROFESSOR`, até uma tela dedicada de
+  professor existir) e mostra: saudação, plano atual com sessões
+  usadas no período (mesmo cálculo de `create_booking()`, não uma
+  segunda conta), próxima aula, e os botões de ação da seção 23.
+- **Decisão deliberada**: "Reservar aula", "Minhas reservas" e "Fazer
+  check-in" apontam para a mesma tela (`/dashboard/bookings`) em vez de
+  três telas separadas — reservar e ver as próprias reservas são o
+  mesmo fluxo na prática (o aluno normalmente faz as duas coisas na
+  mesma visita), e o check-in só faz sentido no contexto de uma reserva
+  existente. "Minhas reservas"/"Fazer check-in" usam uma âncora
+  (`#minhas-reservas`) para pular direto pra lá. Três telas idênticas
+  com nomes diferentes não pareciam genuinamente mais úteis — se isso
+  se provar errado no uso real, separar depois é simples.
+- **Decisão deliberada**: o portal do aluno usa o mesmo shell
+  (`(dashboard)/layout.tsx`, sidebar) do painel administrativo, não um
+  layout separado com navegação inferior — a sidebar do shadcn/ui já
+  colapsa para um menu deslizante em telas pequenas, o que é um padrão
+  mobile aceitável. "Pensado primeiro para mobile" (seção 36) foi
+  priorizado no **conteúdo** (cards grandes, botões de toque generosos,
+  layout de coluna única) em vez de reconstruir o chrome de navegação.
+- "Meu perfil" (nome, e-mail somente leitura, telefone) fica em
+  `/dashboard/profile` e é o mesmo formulário para qualquer papel, não
+  uma tela exclusiva do aluno — todo usuário deveria poder editar o
+  próprio nome/telefone.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Professores (CRUD dedicado), portal do aluno e painel de TV chegam nas
-fases 9–10 — ver README. Nenhuma tela atual finge que essas
-funcionalidades existem.
+CRUD dedicado de professores e o painel de TV chegam na Fase 10 — ver
+README. Nenhuma tela atual finge que essas funcionalidades existem.
