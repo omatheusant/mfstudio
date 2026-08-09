@@ -20,6 +20,7 @@ export type BillingCycle = "MONTHLY" | "WEEKLY" | "QUARTERLY" | "YEARLY" | "CUST
 export type SessionPeriod = "WEEK" | "MONTH";
 export type StudentStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionStatus = "ACTIVE" | "INACTIVE" | "CANCELLED" | "SUSPENDED";
+export type BookingStatus = "RESERVED" | "CANCELLED" | "CANCELLED_LATE" | "COMPLETED" | "NO_SHOW";
 
 export type Database = {
   public: {
@@ -372,6 +373,56 @@ export type Database = {
           },
         ];
       };
+      bookings: {
+        Row: {
+          id: string;
+          organization_id: string;
+          student_id: string;
+          schedule_slot_id: string;
+          date: string;
+          status: BookingStatus;
+          created_at: string;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          student_id: string;
+          schedule_slot_id: string;
+          date: string;
+          status?: BookingStatus;
+          created_at?: string;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["bookings"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "bookings_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_schedule_slot_id_fkey";
+            columns: ["schedule_slot_id"];
+            isOneToOne: false;
+            referencedRelation: "schedule_slots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -402,6 +453,14 @@ export type Database = {
       student_belongs_to_current_user: {
         Args: { p_student_id: string };
         Returns: boolean;
+      };
+      create_booking: {
+        Args: { p_student_id: string; p_schedule_slot_id: string; p_date: string };
+        Returns: Database["public"]["Tables"]["bookings"]["Row"];
+      };
+      cancel_booking: {
+        Args: { p_booking_id: string };
+        Returns: Database["public"]["Tables"]["bookings"]["Row"];
       };
     };
     Enums: Record<string, never>;

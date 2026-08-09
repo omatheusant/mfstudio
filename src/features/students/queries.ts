@@ -15,8 +15,30 @@ export type StudentSubscriptionSummary = {
   id: string;
   status: SubscriptionStatus;
   price: number;
-  plan: { id: string; name: string } | null;
+  plan: { id: string; name: string; session_limit: number; session_period: "WEEK" | "MONTH" } | null;
 };
+
+/** The `students` row for the given profile within an organization — used to resolve "which student am I" for a logged-in STUDENT. */
+export async function getStudentByProfileId(organizationId: string, profileId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("students")
+    .select(
+      "id, status, subscriptions(id, status, price, plan:plans(id, name, session_limit, session_period))",
+    )
+    .eq("organization_id", organizationId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[students] failed to load student by profile:", error.message);
+    return null;
+  }
+
+  return data as
+    | { id: string; status: StudentStatus; subscriptions: StudentSubscriptionSummary[] }
+    | null;
+}
 
 export type StudentListRow = {
   id: string;

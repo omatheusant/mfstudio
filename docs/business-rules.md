@@ -62,11 +62,10 @@ concordando entre si**:
   rejeita com `on delete restrict`); a UI traduz isso em uma mensagem
   amigável em vez de deixar o erro do Postgres vazar. Desativá-la
   (`active = false`) é sempre possível.
-- Janela de cancelamento (`cancellation_window_minutes`) e janela de
+- Janela de cancelamento (`cancellation_window_minutes`) já tem efeito
+  real a partir da Fase 5 (`cancel_booking()` lê esse valor). Janela de
   check-in (`checkin_open_minutes_before`/`checkin_close_minutes_after`)
-  estão configuráveis desde já, mas só passam a ter efeito quando as
-  Fases 5/6 (reservas e check-in) lerem esses valores — configurá-las
-  agora não muda comportamento nenhum ainda.
+  segue configurável mas sem efeito até a Fase 6.
 - `block_booking_when_overdue` (default `true`) mesma coisa: gravado e
   editável agora, com efeito a partir da Fase 7.
 
@@ -123,14 +122,64 @@ concordando entre si**:
 - Apenas `OWNER`/`ADMIN` cadastram, editam ou desativam alunos e trocam
   seus planos. Um `STUDENT` só enxerga o próprio registro (nunca o de
   outro aluno) — reforçado por RLS, não só pela UI.
-- As abas "Próximas reservas", "Histórico de presença" e "Pagamentos" no
-  detalhe do aluno mostram um estado vazio genuíno, não um "em breve"
-  disfarçado — essas informações passam a existir a partir das Fases
-  5, 6 e 7, respectivamente.
+- As abas "Histórico de presença" e "Pagamentos" no detalhe do aluno
+  ainda mostram um estado vazio genuíno — passam a existir a partir das
+  Fases 6 e 7. "Próximas reservas" já mostra dados reais desde a Fase 5.
+
+## Reservas (Fase 5)
+
+Esta é a regra mais importante do produto (seção 11 do briefing) —
+implementada inteiramente no banco, em `create_booking()`, não
+espalhada pela aplicação (ver `docs/database.md`). Um aluno só consegue
+reservar um horário se, nesta ordem:
+
+1. O horário existe, está ativo, e a data escolhida cai no dia da
+   semana certo (nunca reservar uma segunda-feira num horário de terça).
+2. A data não é no passado.
+3. Quem está reservando é o próprio aluno **ou** um `OWNER`/`ADMIN` da
+   organização reservando em nome dele (ex.: aluno que liga pedindo pra
+   marcar).
+4. O aluno está `ACTIVE` (ver Fase 4).
+5. O aluno tem uma assinatura `ACTIVE`.
+6. A categoria do horário está entre as categorias permitidas pelo
+   plano da assinatura (`plan_schedule_categories`) — o sistema nunca
+   mostra como reservável um horário fora do plano; quando aparece na
+   lista mesmo assim (para transparência, seção 24 do briefing), vem
+   marcado como "Fora do seu plano" e o botão fica desabilitado.
+7. O aluno ainda não atingiu o limite de sessões do plano **no período
+   atual** — semana ISO (segunda a domingo) ou mês corrente, conforme
+   `plans.session_period`. O cálculo sempre conta reservas reais
+   (`RESERVED`/`COMPLETED`) do período, nunca um contador solto que
+   pudesse dessincronizar.
+8. Não há conflito de horário — nenhuma outra reserva `RESERVED` do
+   mesmo aluno, na mesma data, cujo intervalo de tempo se sobreponha.
+9. Ainda há vaga — `capacidade do horário - reservas RESERVED naquela
+   data`.
+
+**Concorrência**: duas pessoas tentando reservar a última vaga ao mesmo
+tempo nunca resultam em overbooking — a função trava a linha de
+`schedule_slots` (`SELECT ... FOR UPDATE`) antes de contar as reservas
+existentes, forçando tentativas concorrentes para o mesmo horário a
+serializar. Ver `docs/database.md` e o teste de carga na Fase 11.
+
+**Cancelamento**: só o próprio aluno ou a equipe (`OWNER`/`ADMIN`/
+`PROFESSOR`) podem cancelar uma reserva `RESERVED`. Dentro da janela
+configurada (`organization_settings.cancellation_window_minutes`, minutos
+de antecedência antes do início da aula, calculado no fuso da
+organização) o status vira `CANCELLED` e a sessão volta a ficar
+disponível para o limite do período; fora da janela, vira
+`CANCELLED_LATE` e a sessão continua contando para o limite — exatamente
+como a seção 13 do briefing pede.
+
+A Agenda (`/dashboard/agenda`, para `OWNER`/`ADMIN`/`PROFESSOR`) mostra
+ocupação por horário e a lista de alunos reservados, com cancelamento
+direto. O aluno reserva em `/dashboard/bookings`; a versão com o
+dashboard completo do portal (seção 23 do briefing) chega na Fase 9 —
+por enquanto o fluxo é funcional, só ainda não visualmente dedicado.
 
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Professores (CRUD dedicado), reservas, check-in, presença, pagamentos,
+Professores (CRUD dedicado), check-in, presença, pagamentos,
 inadimplência, dashboard operacional e painel de TV chegam nas fases
-5–10 — ver README. Nenhuma tela atual finge que essas funcionalidades
+6–10 — ver README. Nenhuma tela atual finge que essas funcionalidades
 existem.

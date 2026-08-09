@@ -26,7 +26,7 @@ qualquer Studio.
 | 2 | Configurações da organização, categorias de horário, horários (`schedule_slots`) | ✅ |
 | 3 | Planos (`plans`, categorias permitidas) | ✅ |
 | 4 | CRUD de alunos + assinaturas (`students`, `subscriptions`) | ✅ |
-| 5 | Agenda e reservas (com proteção de concorrência) | ⏳ |
+| 5 | Agenda e reservas (`bookings`, com proteção de concorrência) | ✅ |
 | 6 | Check-in e presença | ⏳ |
 | 7 | Financeiro e inadimplência | ⏳ |
 | 8 | Dashboard administrativo | ⏳ |
@@ -113,9 +113,9 @@ tem os privilégios necessários para inserir usuários de teste diretamente.
 
 > `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 7
 > usuários (3 equipe + 4 alunos com assinaturas), as configurações
-> padrão, os horários (categorias Premium/Alternativo, segunda a sexta) e
-> os 8 planos do MF Studio; fases seguintes acrescentam reservas,
-> check-ins e pagamentos ao mesmo script.
+> padrão, os horários (categorias Premium/Alternativo, segunda a sexta),
+> os 8 planos do MF Studio e algumas reservas futuras; fases seguintes
+> acrescentam check-ins e pagamentos ao mesmo script.
 
 ## Rodando localmente
 
@@ -133,7 +133,9 @@ Abra [http://localhost:3000](http://localhost:3000).
   de verdade (via Supabase Auth) — precisa de `SUPABASE_SERVICE_ROLE_KEY`
   configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
-  qualquer um dos e-mails da tabela acima.
+  qualquer um dos e-mails da tabela acima. Como `OWNER`/`ADMIN`/`PROFESSOR`,
+  veja a ocupação do dia em **Agenda**; como aluno (`aluno@mfstudio.dev`,
+  por exemplo), reserve uma aula em **Reservar aula**.
 
 ## Variáveis de ambiente
 
@@ -165,6 +167,8 @@ src/
 │   │       ├── page.tsx           # visão geral + equipe
 │   │       ├── students/          # lista + detalhe (CRUD de alunos e assinaturas)
 │   │       ├── plans/             # CRUD de planos
+│   │       ├── agenda/            # ocupação do dia + lista de alunos por horário (equipe)
+│   │       ├── bookings/          # reservar aula + minhas reservas (aluno)
 │   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
 │   ├── auth/confirm/              # route handler de confirmação de e-mail / convite
 │   ├── onboarding/                # criação da organização (primeiro acesso)
@@ -176,7 +180,8 @@ src/
 │   ├── organizations/              # organização + organization_settings
 │   ├── schedules/                  # categorias + horários
 │   ├── plans/                      # planos + categorias permitidas
-│   └── students/                   # alunos + assinaturas (convite via admin API)
+│   ├── students/                   # alunos + assinaturas (convite via admin API)
+│   └── bookings/                   # reservas (RPCs create_booking/cancel_booking)
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)

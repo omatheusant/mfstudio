@@ -155,6 +155,58 @@ Se qualquer passo depois do convite falhar, o usuário de autenticação
 recém-criado é removido (`auth.admin.deleteUser`) para não deixar contas
 órfãs.
 
+## Esquema (Fase 5)
+
+```text
+bookings
+    id, organization_id → organizations, student_id → students
+      (on delete cascade), schedule_slot_id → schedule_slots
+      (on delete restrict), date,
+    status ('RESERVED'|'CANCELLED'|'CANCELLED_LATE'|'COMPLETED'|'NO_SHOW'),
+    created_at, cancelled_at, cancelled_by → profiles, updated_at
+    unique index parcial: no máximo 1 RESERVED por (student_id,
+      schedule_slot_id, date)
+```
+
+`bookings` nunca é escrita diretamente pelo código da aplicação — a
+única forma suportada de criar ou cancelar uma reserva é através das
+RPCs abaixo, exatamente como `organizations` só existe via
+`create_organization()`.
+
+### RPCs `create_booking` / `cancel_booking`
+
+Toda a "Regra central de reservas" (seção 11 do briefing do produto)
+está implementada em `20260808160003_rpc_bookings.sql`, numa função só,
+para nunca duplicar ou dessincronizar a regra entre banco e aplicação.
+`create_booking(p_student_id, p_schedule_slot_id, p_date)` verifica, nesta
+ordem: horário existe/ativo, data bate com o `day_of_week` do horário,
+data não é passada, autorização (o próprio aluno ou `OWNER`/`ADMIN` do
+horário), aluno `ACTIVE`, assinatura `ACTIVE`, categoria do horário
+permitida pelo plano, limite de sessões do período (semana ISO
+segunda-domingo, ou mês corrido) ainda não atingido, nenhuma reserva
+conflitante (horário sobreposto) na mesma data, e por fim capacidade.
+
+**Proteção contra overbooking por concorrência** (seção 39 do briefing):
+a função começa travando a linha de `schedule_slots` com
+`SELECT ... FOR UPDATE`. Isso serializa qualquer tentativa concorrente de
+reservar aquele horário — a segunda transação simplesmente espera a
+primeira terminar antes de contar as reservas existentes, então nunca é
+possível duas transações lerem "7/8 vagas" ao mesmo tempo e ambas
+inserirem a 8ª e a 9ª reserva. Testado explicitamente na Fase 11 (ver
+`docs/business-rules.md`).
+
+`cancel_booking(p_booking_id)` decide `CANCELLED` vs `CANCELLED_LATE`
+comparando `now()` com o instante de início da aula
+(`bookings.date` + `schedule_slots.start_time`, interpretado no fuso
+horário **da organização** — nunca o do servidor ou do navegador) menos
+`organization_settings.cancellation_window_minutes`.
+
+Ambas as funções são `SECURITY INVOKER` (padrão): rodam com os
+privilégios de quem chamou, então a RLS de `schedule_slots`/`students`/
+`subscriptions`/`bookings` continua valendo em cada instrução lá dentro
+— é uma segunda camada de proteção independente das checagens explícitas
+na função, não uma redundância inútil.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -224,3 +276,10 @@ Ouro/Bronze Alternativo/Prata/Diamante) — inseridos diretamente como
 `postgres`, não através do fluxo de convite real (que precisa da service
 role key rodando fora do SQL Editor). Alunos cadastrados pela UI depois
 do seed passam pelo fluxo de convite de verdade.
+
+Desde a Fase 5, também semeia algumas reservas futuras (para os alunos
+com plano ativo, num horário compatível com sua categoria) — inseridas
+diretamente na tabela, não via `create_booking()`, porque o seed roda
+fora de uma sessão de usuário (`auth.uid()` seria nulo). A trigger
+`validate_booking` ainda roda normalmente e funciona como um teste de
+sanidade sobre os dados do próprio seed.

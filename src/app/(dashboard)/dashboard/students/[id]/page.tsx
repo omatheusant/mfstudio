@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { getMemberships, requireRole } from "@/lib/auth/dal";
+import { getUpcomingBookingsForStudent } from "@/features/bookings/queries";
 import { getPlans } from "@/features/plans/queries";
 import { getStudent } from "@/features/students/queries";
 import { formatCurrency } from "@/lib/utils";
 import { SESSION_PERIOD_LABEL } from "@/lib/constants/plans";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,7 +18,9 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { MyBookingsList } from "../../bookings/_components/my-bookings-list";
 import { ChangePlanDialog } from "./_components/change-plan-dialog";
+import { NewBookingDialog } from "./_components/new-booking-dialog";
 import { NotesForm } from "./_components/notes-form";
 import { StudentStatusSwitch } from "./_components/student-status-switch";
 
@@ -47,6 +51,8 @@ export default async function StudentDetailPage({
   if (!student) {
     notFound();
   }
+
+  const upcomingBookings = await getUpcomingBookingsForStudent(student.id);
 
   const activeSubscription = student.subscriptions.find((s) => s.status === "ACTIVE");
   const activePlans = plans.filter((plan) => plan.active);
@@ -173,14 +179,26 @@ export default async function StudentDetailPage({
 
         <TabsContent value="bookings" className="pt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Próximas reservas</CardTitle>
-              <CardDescription>Disponível a partir da Fase 5 (Agenda e reservas).</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle>Próximas reservas</CardTitle>
+                <CardDescription>
+                  Só é possível reservar horários compatíveis com o plano
+                  ativo do aluno.
+                </CardDescription>
+              </div>
+              <NewBookingDialog
+                organizationId={primary.organization_id}
+                studentId={student.id}
+                trigger={
+                  <Button size="sm" disabled={!activeSubscription}>
+                    Nova reserva
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Nenhuma reserva ainda.
-              </p>
+              <MyBookingsList bookings={upcomingBookings} />
             </CardContent>
           </Card>
         </TabsContent>

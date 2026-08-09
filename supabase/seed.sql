@@ -23,10 +23,10 @@
 -- Also seeds: organization_settings, schedule_categories
 -- (Premium/Alternativo) and schedule_slots Mon-Fri (Fase 2); 8 plans
 -- (Bronze/Prata/Ouro/Diamante x Premium/Alternativo) (Fase 3); 4 students
--- with subscriptions (Fase 4).
+-- with subscriptions (Fase 4); a few upcoming bookings (Fase 5).
 --
--- This file grows across phases: later phases append bookings, checkins
--- and payments for the same MF Studio org created here.
+-- This file grows across phases: later phases append checkins and
+-- payments for the same MF Studio org created here.
 
 do $$
 declare
@@ -188,6 +188,28 @@ begin
       or (s.profile_id = v_student2_id and p.name = 'Bronze Alternativo')
       or (s.profile_id = v_student3_id and p.name = 'Prata')
       or (s.profile_id = v_student4_id and p.name = 'Diamante')
+    )
+  on conflict do nothing;
+
+  -- 8. Bookings (Fase 5). A few upcoming reservations so Agenda and
+  -- "Minhas reservas" have something real right after seeding. Inserted
+  -- directly (seed runs outside a user session, so create_booking()'s
+  -- `auth.uid() is null` check would reject it) — the validate_booking
+  -- trigger still runs, doubling as a sanity check on this seed data.
+  insert into public.bookings (organization_id, student_id, schedule_slot_id, date, status)
+  select
+    v_org_id,
+    s.id,
+    ss.id,
+    current_date + ((ss.day_of_week - extract(dow from current_date)::int + 7) % 7),
+    'RESERVED'
+  from public.students s
+  join public.schedule_slots ss on ss.organization_id = v_org_id
+  where s.organization_id = v_org_id
+    and (
+      (s.profile_id = v_student_id and ss.schedule_category_id = v_premium_id and ss.start_time = '18:00')
+      or (s.profile_id = v_student4_id and ss.schedule_category_id = v_premium_id and ss.start_time = '19:00')
+      or (s.profile_id = v_student2_id and ss.schedule_category_id = v_alternativo_id and ss.start_time = '10:00')
     )
   on conflict do nothing;
 end $$;
