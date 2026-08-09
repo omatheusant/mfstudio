@@ -14,6 +14,7 @@ organizations
 profiles                          -- 1:1 com auth.users
     id (= auth.users.id), full_name, avatar_url, phone,
     created_at, updated_at
+    -- (Fase 4 adiciona a coluna `email` — ver seção "Esquema (Fase 4)")
 
 organization_members              -- N:N entre profiles e organizations
     id, organization_id → organizations, user_id → profiles,
@@ -98,6 +99,62 @@ apagar e reinserir do cliente em duas idas ao banco, que poderiam falhar
 parcialmente). Ela roda como quem a chamou (não é `SECURITY DEFINER`), então
 RLS e o trigger acima continuam valendo normalmente.
 
+## Esquema (Fase 4)
+
+```text
+profiles.email                    -- coluna nova, não uma tabela nova
+    Denormalizada de auth.users.email via trigger (handle_new_user +
+    handle_user_email_change), porque auth.users não é consultável via
+    PostgREST/RLS. A aplicação nunca escreve esta coluna diretamente.
+
+students
+    id, organization_id → organizations, profile_id → profiles
+      (on delete restrict), status ('ACTIVE'|'INACTIVE'), notes,
+    created_at, updated_at
+    unique (organization_id, profile_id)
+
+subscriptions
+    id, organization_id → organizations, student_id → students
+      (on delete cascade), plan_id → plans (on delete restrict),
+    start_date, end_date, status ('ACTIVE'|'INACTIVE'|'CANCELLED'
+      |'SUSPENDED'), price numeric(10,2) (congelado na criação),
+    billing_day (1-31, opcional), created_at, updated_at
+    unique index parcial: no máximo 1 assinatura ACTIVE por aluno
+```
+
+`students` é deliberadamente separada de `profiles` (identidade) e de
+`organization_members` (papel/acesso): nome/telefone/e-mail moram em
+`profiles`; status de negócio e observações internas moram em `students`.
+Um aluno **sempre** tem login (ver "Convite de aluno" abaixo) — não existe
+"cadastro no papel" sem conta.
+
+`subscriptions.price` é copiado de `plans.price` na criação e nunca
+muda retroativamente se o preço do plano mudar depois — ver
+`docs/business-rules.md`.
+
+Duas triggers de defesa em profundidade, no mesmo espírito de
+`validate_plan_schedule_category` (Fase 3):
+
+- `validate_subscription`: garante que `plan_id` e `student_id` de uma
+  assinatura pertencem à mesma `organization_id` da própria assinatura.
+- O índice único parcial `subscriptions_one_active_per_student` garante
+  no banco que um aluno nunca tem duas assinaturas `ACTIVE`
+  simultaneamente — a Fase 5 depende disso para calcular sessões
+  disponíveis sem ambiguidade.
+
+### Convite de aluno (por que a service role aparece aqui)
+
+`auth.users` não tem um equivalente RLS — criar um novo usuário de
+autenticação só é possível via `auth.admin.*`, que exige a service role
+key. `features/students/actions.ts#createStudent` é o único lugar do
+app que usa `src/lib/supabase/admin.ts`, e só para a chamada
+`inviteUserByEmail`; toda gravação seguinte (`organization_members`,
+`students`, `subscriptions`) usa a sessão normal do `OWNER`/`ADMIN` que
+está cadastrando o aluno, passando por RLS como qualquer outra escrita.
+Se qualquer passo depois do convite falhar, o usuário de autenticação
+recém-criado é removido (`auth.admin.deleteUser`) para não deixar contas
+órfãs.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -161,3 +218,9 @@ uma regra do sistema.
 Desde a Fase 3, também semeia os 8 planos do MF Studio (Bronze/Prata/
 Ouro/Diamante, cada um em versão Premium e Alternativo) já vinculados à
 categoria correspondente.
+
+Desde a Fase 4, também semeia 4 alunos com assinaturas (um por plano
+Ouro/Bronze Alternativo/Prata/Diamante) — inseridos diretamente como
+`postgres`, não através do fluxo de convite real (que precisa da service
+role key rodando fora do SQL Editor). Alunos cadastrados pela UI depois
+do seed passam pelo fluxo de convite de verdade.

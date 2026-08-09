@@ -25,7 +25,7 @@ qualquer Studio.
 | 1 | Fundação: Next.js, Supabase Auth, `organizations`/`profiles`/`organization_members`, RLS, proxy de sessão, criação de Studio (onboarding) | ✅ |
 | 2 | Configurações da organização, categorias de horário, horários (`schedule_slots`) | ✅ |
 | 3 | Planos (`plans`, categorias permitidas) | ✅ |
-| 4 | CRUD de alunos + assinaturas (vínculo aluno → plano) | ⏳ |
+| 4 | CRUD de alunos + assinaturas (`students`, `subscriptions`) | ✅ |
 | 5 | Agenda e reservas (com proteção de concorrência) | ⏳ |
 | 6 | Check-in e presença | ⏳ |
 | 7 | Financeiro e inadimplência | ⏳ |
@@ -61,9 +61,18 @@ para as regras de negócio já implementadas.
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    ```
 
-   `SUPABASE_SERVICE_ROLE_KEY` fica em branco a menos que uma feature
-   específica precise dela (ver `src/lib/supabase/admin.ts`) — não é
-   necessária para rodar o projeto.
+   `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API → **service_role**)
+   é necessária a partir da Fase 4: cadastrar um aluno convida um usuário
+   real do Supabase Auth, o que só a API admin consegue fazer (ver
+   `src/lib/supabase/admin.ts`). Sem ela, o resto do app funciona
+   normalmente — só o cadastro de alunos retorna um erro claro pedindo
+   para configurá-la.
+
+4. Em **Authentication → URL Configuration**, adicione
+   `http://localhost:3000/auth/confirm` às *Redirect URLs* (necessário
+   para os links de confirmação de e-mail e de convite de aluno
+   funcionarem). Em produção, adicione também a URL do seu domínio — ver
+   [Deploy](#deploy).
 
 ### Rodando as migrations
 
@@ -81,7 +90,7 @@ execute o conteúdo de cada arquivo em `supabase/migrations/`, em ordem
 
 ### Rodando o seed de desenvolvimento
 
-`supabase/seed.sql` cria a organização **MF Studio** com 4 usuários de
+`supabase/seed.sql` cria a organização **MF Studio** com 7 usuários de
 teste (senha `elevofit123` para todos):
 
 | E-mail | Papel |
@@ -89,7 +98,10 @@ teste (senha `elevofit123` para todos):
 | `owner@mfstudio.dev` | OWNER |
 | `admin@mfstudio.dev` | ADMIN |
 | `professor@mfstudio.dev` | PROFESSOR |
-| `aluno@mfstudio.dev` | STUDENT |
+| `aluno@mfstudio.dev` | STUDENT — plano Ouro, ativo |
+| `maria.silva@mfstudio.dev` | STUDENT — plano Bronze Alternativo, ativo |
+| `pedro.santos@mfstudio.dev` | STUDENT — plano Prata, aluno inativo |
+| `beatriz.costa@mfstudio.dev` | STUDENT — plano Diamante, ativo |
 
 ```bash
 npx supabase db reset   # local: aplica migrations + seed.sql automaticamente
@@ -99,11 +111,11 @@ Em um projeto hospedado de **desenvolvimento** (nunca em produção), cole o
 conteúdo de `supabase/seed.sql` no SQL Editor — ele roda como `postgres` e
 tem os privilégios necessários para inserir usuários de teste diretamente.
 
-> `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 4
-> usuários, as configurações padrão, os horários (categorias
-> Premium/Alternativo, segunda a sexta) e os 8 planos do MF Studio
-> (Bronze/Prata/Ouro/Diamante × Premium/Alternativo); fases seguintes
-> acrescentam alunos, assinaturas, reservas e pagamentos ao mesmo script.
+> `supabase/seed.sql` cresce a cada fase: hoje cria a organização, os 7
+> usuários (3 equipe + 4 alunos com assinaturas), as configurações
+> padrão, os horários (categorias Premium/Alternativo, segunda a sexta) e
+> os 8 planos do MF Studio; fases seguintes acrescentam reservas,
+> check-ins e pagamentos ao mesmo script.
 
 ## Rodando localmente
 
@@ -117,6 +129,9 @@ Abra [http://localhost:3000](http://localhost:3000).
 - **Criar seu próprio Studio**: acesse `/signup`, confirme o e-mail (se a
   confirmação estiver habilitada no seu projeto Supabase) e você será
   levado a `/onboarding` para nomear seu Studio — isso te torna `OWNER`.
+  Em **Alunos → Novo aluno**, cadastrar alguém envia um convite de e-mail
+  de verdade (via Supabase Auth) — precisa de `SUPABASE_SERVICE_ROLE_KEY`
+  configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
   qualquer um dos e-mails da tabela acima.
 
@@ -136,8 +151,8 @@ npm run lint     # ESLint
 ## Deploy
 
 1. **Supabase**: crie/linke o projeto de produção e aplique as migrations (`npx supabase db push`). **Não** rode `supabase/seed.sql` em produção.
-2. **Vercel**: importe o repositório, configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `NEXT_PUBLIC_SITE_URL` (URL de produção) nas variáveis de ambiente do projeto, e faça o deploy.
-3. No painel do Supabase, em **Authentication → URL Configuration**, adicione a URL de produção às *Redirect URLs* (necessário para o link de confirmação de e-mail).
+2. **Vercel**: importe o repositório, configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` (URL de produção) e `SUPABASE_SERVICE_ROLE_KEY` (necessária para convidar alunos — Project Settings → API → **service_role**, nunca a mesma coisa que a anon key) nas variáveis de ambiente do projeto, e faça o deploy.
+3. No painel do Supabase, em **Authentication → URL Configuration**, adicione a URL de produção (`https://seu-dominio.com/auth/confirm`) às *Redirect URLs* — necessário para os links de confirmação de e-mail e de convite de aluno.
 
 ## Estrutura do projeto
 
@@ -148,20 +163,23 @@ src/
 │   ├── (dashboard)/
 │   │   └── dashboard/
 │   │       ├── page.tsx           # visão geral + equipe
+│   │       ├── students/          # lista + detalhe (CRUD de alunos e assinaturas)
 │   │       ├── plans/             # CRUD de planos
 │   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
-│   ├── auth/confirm/              # route handler de confirmação de e-mail
-│   └── onboarding/                # criação da organização (primeiro acesso)
+│   ├── auth/confirm/              # route handler de confirmação de e-mail / convite
+│   ├── onboarding/                # criação da organização (primeiro acesso)
+│   └── set-password/              # primeira senha de usuários convidados (alunos)
 ├── components/
 │   ├── layout/                    # sidebar, menu do usuário
 │   └── ui/                        # shadcn/ui (gerado — não editar à mão)
 ├── features/                      # lógica de domínio por módulo
 │   ├── organizations/              # organização + organization_settings
 │   ├── schedules/                  # categorias + horários
-│   └── plans/                      # planos + categorias permitidas
+│   ├── plans/                      # planos + categorias permitidas
+│   └── students/                   # alunos + assinaturas (convite via admin API)
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
-│   ├── constants/                  # opções fixas de UI (dias da semana, fusos)
+│   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)
 │   ├── supabase/                   # clients Supabase (browser/server/admin) e proxy
 │   └── validations/                # esquemas Zod
 ├── types/database.ts              # espelho do schema do Supabase

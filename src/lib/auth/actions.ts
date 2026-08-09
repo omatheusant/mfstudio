@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   createOrganizationSchema,
   loginSchema,
+  setPasswordSchema,
   signupSchema,
 } from "@/lib/validations/auth";
 
@@ -85,6 +86,38 @@ export async function signup(
   }
 
   redirect("/signup/confirm-email");
+}
+
+/**
+ * Used by invited students/staff (see features/students/actions.ts) on
+ * their first login, right after clicking the invite link — Supabase
+ * authenticates them via the link but they still need a real password of
+ * their own choosing.
+ */
+export async function setPassword(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireUser();
+
+  const parsed = setPasswordSchema.safeParse({
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/dashboard");
 }
 
 export async function createOrganization(

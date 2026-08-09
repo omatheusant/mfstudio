@@ -30,6 +30,13 @@ export const createOrganizationSchema = z.object({
     }),
 });
 
+export const setPasswordSchema = z.object({
+  password: z
+    .string()
+    .min(8, { error: "A senha deve ter pelo menos 8 caracteres." }),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;

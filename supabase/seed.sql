@@ -12,16 +12,20 @@
 -- All seeded users share the password: elevofit123
 --
 -- Emails / roles for MF Studio (see docs/business-rules.md):
---   owner@mfstudio.dev      OWNER
---   admin@mfstudio.dev      ADMIN
---   professor@mfstudio.dev  PROFESSOR
---   aluno@mfstudio.dev      STUDENT
+--   owner@mfstudio.dev          OWNER
+--   admin@mfstudio.dev          ADMIN
+--   professor@mfstudio.dev      PROFESSOR
+--   aluno@mfstudio.dev          STUDENT (plano Ouro, ACTIVE)
+--   maria.silva@mfstudio.dev    STUDENT (plano Bronze Alternativo, ACTIVE)
+--   pedro.santos@mfstudio.dev   STUDENT (plano Prata, aluno INACTIVE)
+--   beatriz.costa@mfstudio.dev  STUDENT (plano Diamante, ACTIVE)
 --
 -- Also seeds: organization_settings, schedule_categories
--- (Premium/Alternativo) and schedule_slots Mon–Fri (Fase 2); 8 plans
--- (Bronze/Prata/Ouro/Diamante × Premium/Alternativo) (Fase 3).
+-- (Premium/Alternativo) and schedule_slots Mon-Fri (Fase 2); 8 plans
+-- (Bronze/Prata/Ouro/Diamante x Premium/Alternativo) (Fase 3); 4 students
+-- with subscriptions (Fase 4).
 --
--- This file grows across phases: later phases append students, bookings
+-- This file grows across phases: later phases append bookings, checkins
 -- and payments for the same MF Studio org created here.
 
 do $$
@@ -30,6 +34,9 @@ declare
   v_admin_id uuid := '00000000-0000-0000-0000-000000000002';
   v_prof_id uuid := '00000000-0000-0000-0000-000000000003';
   v_student_id uuid := '00000000-0000-0000-0000-000000000004';
+  v_student2_id uuid := '00000000-0000-0000-0000-000000000005';
+  v_student3_id uuid := '00000000-0000-0000-0000-000000000006';
+  v_student4_id uuid := '00000000-0000-0000-0000-000000000007';
   v_org_id uuid;
   v_premium_id uuid;
   v_alternativo_id uuid;
@@ -44,7 +51,10 @@ begin
     ('00000000-0000-0000-0000-000000000000', v_owner_id, 'authenticated', 'authenticated', 'owner@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Marcos Ferreira"}', now(), now(), '', ''),
     ('00000000-0000-0000-0000-000000000000', v_admin_id, 'authenticated', 'authenticated', 'admin@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Ana Paula"}', now(), now(), '', ''),
     ('00000000-0000-0000-0000-000000000000', v_prof_id, 'authenticated', 'authenticated', 'professor@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Carlos Nogueira"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_student_id, 'authenticated', 'authenticated', 'aluno@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"João Aluno"}', now(), now(), '', '')
+    ('00000000-0000-0000-0000-000000000000', v_student_id, 'authenticated', 'authenticated', 'aluno@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"João Aluno"}', now(), now(), '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student2_id, 'authenticated', 'authenticated', 'maria.silva@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Maria Silva"}', now(), now(), '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student3_id, 'authenticated', 'authenticated', 'pedro.santos@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Pedro Santos"}', now(), now(), '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student4_id, 'authenticated', 'authenticated', 'beatriz.costa@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Beatriz Costa"}', now(), now(), '', '')
   on conflict (id) do nothing;
 
   insert into auth.identities (
@@ -53,7 +63,10 @@ begin
     (gen_random_uuid(), v_owner_id::text, v_owner_id, jsonb_build_object('sub', v_owner_id::text, 'email', 'owner@mfstudio.dev'), 'email', now(), now(), now()),
     (gen_random_uuid(), v_admin_id::text, v_admin_id, jsonb_build_object('sub', v_admin_id::text, 'email', 'admin@mfstudio.dev'), 'email', now(), now(), now()),
     (gen_random_uuid(), v_prof_id::text, v_prof_id, jsonb_build_object('sub', v_prof_id::text, 'email', 'professor@mfstudio.dev'), 'email', now(), now(), now()),
-    (gen_random_uuid(), v_student_id::text, v_student_id, jsonb_build_object('sub', v_student_id::text, 'email', 'aluno@mfstudio.dev'), 'email', now(), now(), now())
+    (gen_random_uuid(), v_student_id::text, v_student_id, jsonb_build_object('sub', v_student_id::text, 'email', 'aluno@mfstudio.dev'), 'email', now(), now(), now()),
+    (gen_random_uuid(), v_student2_id::text, v_student2_id, jsonb_build_object('sub', v_student2_id::text, 'email', 'maria.silva@mfstudio.dev'), 'email', now(), now(), now()),
+    (gen_random_uuid(), v_student3_id::text, v_student3_id, jsonb_build_object('sub', v_student3_id::text, 'email', 'pedro.santos@mfstudio.dev'), 'email', now(), now(), now()),
+    (gen_random_uuid(), v_student4_id::text, v_student4_id, jsonb_build_object('sub', v_student4_id::text, 'email', 'beatriz.costa@mfstudio.dev'), 'email', now(), now(), now())
   on conflict (provider, provider_id) do nothing;
 
   -- public.profiles rows are created automatically by the
@@ -72,7 +85,10 @@ begin
     (v_org_id, v_owner_id, 'OWNER', 'ACTIVE'),
     (v_org_id, v_admin_id, 'ADMIN', 'ACTIVE'),
     (v_org_id, v_prof_id, 'PROFESSOR', 'ACTIVE'),
-    (v_org_id, v_student_id, 'STUDENT', 'ACTIVE')
+    (v_org_id, v_student_id, 'STUDENT', 'ACTIVE'),
+    (v_org_id, v_student2_id, 'STUDENT', 'ACTIVE'),
+    (v_org_id, v_student3_id, 'STUDENT', 'ACTIVE'),
+    (v_org_id, v_student4_id, 'STUDENT', 'ACTIVE')
   on conflict (organization_id, user_id) do update set role = excluded.role, status = excluded.status;
 
   -- 3. Default organization_settings (Fase 2). Values below just repeat
@@ -143,4 +159,35 @@ begin
       'Ouro', 'Ouro Alternativo', 'Diamante', 'Diamante Alternativo'
     )
   on conflict (plan_id, schedule_category_id) do nothing;
+
+  -- 7. Students + subscriptions (Fase 4). Fictional data. Pedro is
+  -- deliberately INACTIVE as a student (business status) while his login
+  -- (organization_members.status) stays ACTIVE — the two are independent,
+  -- see docs/database.md.
+  insert into public.students (organization_id, profile_id, status, notes)
+  values
+    (v_org_id, v_student_id, 'ACTIVE', null),
+    (v_org_id, v_student2_id, 'ACTIVE', null),
+    (v_org_id, v_student3_id, 'INACTIVE', 'Pausou por lesão no joelho.'),
+    (v_org_id, v_student4_id, 'ACTIVE', null)
+  on conflict (organization_id, profile_id) do update set status = excluded.status;
+
+  insert into public.subscriptions (organization_id, student_id, plan_id, price, start_date, status)
+  select
+    v_org_id,
+    s.id,
+    p.id,
+    p.price,
+    current_date - interval '30 days',
+    case when s.profile_id = v_student3_id then 'CANCELLED' else 'ACTIVE' end
+  from public.students s
+  join public.plans p on p.organization_id = v_org_id
+  where s.organization_id = v_org_id
+    and (
+      (s.profile_id = v_student_id and p.name = 'Ouro')
+      or (s.profile_id = v_student2_id and p.name = 'Bronze Alternativo')
+      or (s.profile_id = v_student3_id and p.name = 'Prata')
+      or (s.profile_id = v_student4_id and p.name = 'Diamante')
+    )
+  on conflict do nothing;
 end $$;

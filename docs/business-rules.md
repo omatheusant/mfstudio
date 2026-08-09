@@ -92,13 +92,45 @@ concordando entre si**:
 - Uma categoria vinculada a algum plano não pode ser excluída
   (`on delete restrict`) — desative-a em vez disso. Mesma regra já valia
   para categoria vinculada a horário (Fase 2).
-- Desativar um plano (`active = false`) não afeta assinaturas existentes
-  automaticamente — isso só passa a ter sentido prático a partir da Fase 4,
-  quando assinaturas existirem.
+- Desativar um plano (`active = false`) não cancela assinaturas
+  existentes — apenas o impede de ser escolhido em novas assinaturas
+  (Fase 4). Quem já está no plano continua nele até uma troca manual.
+
+## Alunos e assinaturas (Fase 4)
+
+- **Cadastrar um aluno cria uma conta de verdade.** Não existe "aluno no
+  papel" sem login — cadastrar em Alunos → Novo aluno convida um usuário
+  real do Supabase Auth (e-mail com link de convite), cria a membership
+  (`role = 'STUDENT'`) e a assinatura no plano escolhido, tudo em uma
+  única ação. Se qualquer etapa falhar depois do convite, a conta criada
+  é removida — não fica usuário órfão sem organização.
+- No primeiro acesso (link do convite), o aluno é levado a `/set-password`
+  para escolher sua própria senha antes de continuar para o painel.
+- **Status do aluno (`students.status`) é independente do status de
+  acesso (`organization_members.status`).** Um aluno pode ficar
+  `INACTIVE` como cliente (pausou, cancelou) sem perder o login — ver o
+  aluno Pedro Santos no seed. O inverso (login desativado, aluno "ativo")
+  também é possível, embora incomum na prática.
+- **Um aluno tem no máximo uma assinatura `ACTIVE` por vez** — reforçado
+  por um índice único parcial no banco, não só pela UI. Trocar de plano
+  encerra a assinatura atual (`CANCELLED`, com `end_date`) e cria uma
+  nova, na ordem exigida para nunca violar essa garantia.
+- **O preço fica congelado na assinatura, não no plano** (`subscriptions.price`,
+  copiado de `plans.price` no momento da criação). Se o Ouro passar de
+  R$120 para R$130, assinaturas já existentes não mudam retroativamente
+  — só a próxima assinatura criada usa o novo preço (a menos que o valor
+  seja sobrescrito manualmente na hora de vincular o plano).
+- Apenas `OWNER`/`ADMIN` cadastram, editam ou desativam alunos e trocam
+  seus planos. Um `STUDENT` só enxerga o próprio registro (nunca o de
+  outro aluno) — reforçado por RLS, não só pela UI.
+- As abas "Próximas reservas", "Histórico de presença" e "Pagamentos" no
+  detalhe do aluno mostram um estado vazio genuíno, não um "em breve"
+  disfarçado — essas informações passam a existir a partir das Fases
+  5, 6 e 7, respectivamente.
 
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Alunos, assinaturas, professores (CRUD dedicado), reservas, check-in,
-presença, pagamentos, inadimplência, dashboard operacional e painel de TV
-chegam nas fases 4–10 — ver README. Nenhuma tela atual finge que essas
-funcionalidades existem.
+Professores (CRUD dedicado), reservas, check-in, presença, pagamentos,
+inadimplência, dashboard operacional e painel de TV chegam nas fases
+5–10 — ver README. Nenhuma tela atual finge que essas funcionalidades
+existem.

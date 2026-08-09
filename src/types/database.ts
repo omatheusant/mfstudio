@@ -18,6 +18,8 @@ export type MemberStatus = "ACTIVE" | "INACTIVE";
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type BillingCycle = "MONTHLY" | "WEEKLY" | "QUARTERLY" | "YEARLY" | "CUSTOM";
 export type SessionPeriod = "WEEK" | "MONTH";
+export type StudentStatus = "ACTIVE" | "INACTIVE";
+export type SubscriptionStatus = "ACTIVE" | "INACTIVE" | "CANCELLED" | "SUSPENDED";
 
 export type Database = {
   public: {
@@ -56,6 +58,7 @@ export type Database = {
           full_name: string | null;
           avatar_url: string | null;
           phone: string | null;
+          email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -64,6 +67,7 @@ export type Database = {
           full_name?: string | null;
           avatar_url?: string | null;
           phone?: string | null;
+          email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -279,6 +283,95 @@ export type Database = {
           },
         ];
       };
+      students: {
+        Row: {
+          id: string;
+          organization_id: string;
+          profile_id: string;
+          status: StudentStatus;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          profile_id: string;
+          status?: StudentStatus;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["students"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "students_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "students_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          student_id: string;
+          plan_id: string;
+          start_date: string;
+          end_date: string | null;
+          status: SubscriptionStatus;
+          price: number;
+          billing_day: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          student_id: string;
+          plan_id: string;
+          start_date?: string;
+          end_date?: string | null;
+          status?: SubscriptionStatus;
+          price: number;
+          billing_day?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscriptions_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -305,6 +398,10 @@ export type Database = {
       sync_plan_categories: {
         Args: { p_plan_id: string; p_category_ids: string[] };
         Returns: undefined;
+      };
+      student_belongs_to_current_user: {
+        Args: { p_student_id: string };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;

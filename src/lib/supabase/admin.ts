@@ -8,14 +8,18 @@ import type { Database } from "@/types/database";
  * Service-role Supabase client. Bypasses RLS entirely.
  *
  * ⚠️ DANGEROUS. Only import this file from trusted server-only code that
- * has already established, in application logic, why RLS cannot be used
- * (e.g. provisioning a new organization/owner before any membership row
- * exists to satisfy a policy). Never import this from a Client Component,
- * a file without `"use server"`/route handler context, or anywhere the
+ * has already established, in application logic, why RLS cannot be used.
+ * Known legitimate call sites in this codebase:
+ *   - `auth.admin.*` calls, which have no RLS-governed equivalent at all
+ *     (e.g. `features/students/actions.ts#createStudent` inviting a new
+ *     Supabase Auth user for a student).
+ * Never import this from a Client Component, a file without
+ * `"use server"`/route handler context, or anywhere the
  * `SUPABASE_SERVICE_ROLE_KEY` could reach the browser bundle.
  *
  * Every call site using this client MUST perform its own authorization
- * check in application code, since the database will not do it for you.
+ * check in application code (typically `requireRole` from the DAL)
+ * *before* touching it, since the database will not do it for you.
  */
 export function createAdminClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
