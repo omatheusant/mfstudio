@@ -109,7 +109,13 @@ export type FinancialSummary = {
   paidThisMonthAmount: number;
 };
 
-/** Reused by the (Fase 8) dashboard — kept here since it reads straight from payments_with_status. */
+/**
+ * Reused by the Fase 8 dashboard — kept here since it reads straight
+ * from payments_with_status. `overdueCount` counts distinct STUDENTS
+ * with at least one overdue payment ("Alunos inadimplentes" in the
+ * briefing), not the number of overdue payment rows — a student with
+ * two overdue charges is still one inadimplente.
+ */
 export async function getFinancialSummary(organizationId: string): Promise<FinancialSummary> {
   const supabase = await createClient();
   const monthStart = new Date();
@@ -119,7 +125,7 @@ export async function getFinancialSummary(organizationId: string): Promise<Finan
   const [{ data: overdue }, { data: pending }, { data: paid }] = await Promise.all([
     supabase
       .from("payments_with_status")
-      .select("amount")
+      .select("student_id, amount")
       .eq("organization_id", organizationId)
       .eq("effective_status", "OVERDUE"),
     supabase
@@ -136,7 +142,7 @@ export async function getFinancialSummary(organizationId: string): Promise<Finan
   ]);
 
   return {
-    overdueCount: overdue?.length ?? 0,
+    overdueCount: new Set((overdue ?? []).map((p) => p.student_id)).size,
     overdueAmount: (overdue ?? []).reduce((sum, p) => sum + Number(p.amount), 0),
     pendingAmount: (pending ?? []).reduce((sum, p) => sum + Number(p.amount), 0),
     paidThisMonthAmount: (paid ?? []).reduce((sum, p) => sum + Number(p.amount), 0),

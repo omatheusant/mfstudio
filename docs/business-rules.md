@@ -233,8 +233,40 @@ Duas formas de registrar o que aconteceu numa reserva, ambas gravando um
   com todos os indicadores de negócio (seção 49 do briefing) chega na
   Fase 8.
 
+## Dashboard administrativo (Fase 8)
+
+`/dashboard` mostra a visão de negócio completa para `OWNER`/`ADMIN`
+(seções 21 e 49 do briefing); `PROFESSOR`/`STUDENT` continuam vendo a
+lista simples de equipe até a Fase 9 (Portal do Aluno) dar ao `STUDENT`
+uma home própria. Definições exatas dos indicadores — para não
+"inventar métricas" quando o dado não é auto-evidente (seção 49):
+
+- **Alunos ativos/inativos**: `students.status`, direto.
+- **Novos alunos**: alunos cujo `created_at` caiu nos últimos 30 dias.
+  Essa é a única janela com uma definição não-ambígua no MVP — não
+  existe um conceito de "mês de referência" ainda.
+- **Alunos inadimplentes**: contagem de alunos **distintos** com pelo
+  menos um pagamento `OVERDUE` — não a contagem de cobranças atrasadas
+  (um aluno com duas cobranças atrasadas é 1 inadimplente, não 2). Vem
+  de `getFinancialSummary()`, a mesma função que alimenta
+  `/dashboard/payments`.
+- **Receita recebida**: soma de pagamentos `PAID` cujo `paid_at` caiu no
+  mês corrente (calendário, não "últimos 30 dias").
+- **Receita pendente** / **Receita em atraso**: soma de `payments_with_status`
+  com `effective_status = 'PENDING'` / `'OVERDUE'`, sem filtro de data —
+  é "tudo que ainda vamos receber" e "tudo que já deveria ter sido
+  recebido", respectivamente.
+- **Aulas de hoje**: quantidade de `schedule_slots` ativos cujo
+  `day_of_week` bate com o dia de hoje.
+- **Vagas ocupadas hoje** / **Ocupação média hoje**: soma de reservas
+  `RESERVED` de hoje sobre a soma de capacidades de hoje — a mesma
+  contagem que alimenta a Agenda, não uma métrica paralela.
+- A seção "Agenda de hoje" no dashboard é a mesma tela de
+  `/dashboard/agenda`, resumida — clicar em "Ver" abre o mesmo diálogo
+  de lista de alunos com marcação de presença.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Professores (CRUD dedicado), dashboard operacional consolidado e painel
-de TV chegam nas fases 8–10 — ver README. Nenhuma tela atual finge que
-essas funcionalidades existem.
+Professores (CRUD dedicado), portal do aluno e painel de TV chegam nas
+fases 9–10 — ver README. Nenhuma tela atual finge que essas
+funcionalidades existem.

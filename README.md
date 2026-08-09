@@ -29,7 +29,7 @@ qualquer Studio.
 | 5 | Agenda e reservas (`bookings`, com proteção de concorrência) | ✅ |
 | 6 | Check-in e presença (`checkins`) | ✅ |
 | 7 | Financeiro e inadimplência (`payments`, bloqueio de reserva) | ✅ |
-| 8 | Dashboard administrativo | ⏳ |
+| 8 | Dashboard administrativo (indicadores + agenda do dia) | ✅ |
 | 9 | Portal do aluno | ⏳ |
 | 10 | Painel de TV (`/studio/display`) | ⏳ |
 | 11 | Testes das regras críticas, seed completo, documentação final | ⏳ |
@@ -134,8 +134,10 @@ Abra [http://localhost:3000](http://localhost:3000).
   de verdade (via Supabase Auth) — precisa de `SUPABASE_SERVICE_ROLE_KEY`
   configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
-  qualquer um dos e-mails da tabela acima. Como `OWNER`/`ADMIN`/`PROFESSOR`,
-  veja a ocupação do dia em **Agenda** e marque presença/falta por lá, e
+  qualquer um dos e-mails da tabela acima. Como `owner@mfstudio.dev`/
+  `admin@mfstudio.dev`, o **Dashboard** já mostra indicadores reais de
+  negócio (alunos ativos/inadimplentes, receita, ocupação); veja a
+  ocupação do dia em **Agenda** e marque presença/falta por lá, e
   gerencie cobranças em **Pagamentos** (a Maria já entra como
   inadimplente); como aluno (`aluno@mfstudio.dev`, por exemplo), reserve
   uma aula em **Reservar aula**, faça check-in no dia (dentro da janela
@@ -189,7 +191,8 @@ src/
 │   ├── students/                   # alunos + assinaturas (convite via admin API)
 │   ├── bookings/                   # reservas (RPCs create_booking/cancel_booking)
 │   ├── checkins/                   # presença (RPCs student_checkin/mark_attendance)
-│   └── payments/                   # pagamentos + view payments_with_status (inadimplência)
+│   ├── payments/                   # pagamentos + view payments_with_status (inadimplência)
+│   └── dashboard/                  # indicadores de negócio (agrega os módulos acima)
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)
