@@ -5,6 +5,7 @@ import { getMemberships, requireRole } from "@/lib/auth/dal";
 import { getUpcomingBookingsForStudent } from "@/features/bookings/queries";
 import { getAttendanceHistory } from "@/features/checkins/queries";
 import { getPlans } from "@/features/plans/queries";
+import { getPaymentsForStudent } from "@/features/payments/queries";
 import { getStudent } from "@/features/students/queries";
 import { formatCurrency } from "@/lib/utils";
 import { SESSION_PERIOD_LABEL } from "@/lib/constants/plans";
@@ -20,8 +21,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { MyBookingsList } from "../../bookings/_components/my-bookings-list";
+import { PaymentsTable } from "../../payments/_components/payments-table";
 import { ChangePlanDialog } from "./_components/change-plan-dialog";
 import { NewBookingDialog } from "./_components/new-booking-dialog";
+import { NewPaymentDialog } from "./_components/new-payment-dialog";
 import { NotesForm } from "./_components/notes-form";
 import { StudentStatusSwitch } from "./_components/student-status-switch";
 
@@ -53,9 +56,10 @@ export default async function StudentDetailPage({
     notFound();
   }
 
-  const [upcomingBookings, attendanceHistory] = await Promise.all([
+  const [upcomingBookings, attendanceHistory, payments] = await Promise.all([
     getUpcomingBookingsForStudent(student.id),
     getAttendanceHistory(student.id),
+    getPaymentsForStudent(student.id),
   ]);
 
   const activeSubscription = student.subscriptions.find((s) => s.status === "ACTIVE");
@@ -249,12 +253,34 @@ export default async function StudentDetailPage({
 
         <TabsContent value="payments" className="pt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Pagamentos</CardTitle>
-              <CardDescription>Disponível a partir da Fase 7 (Financeiro).</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle>Pagamentos</CardTitle>
+                <CardDescription>
+                  Controle manual — nenhuma cobrança é gerada automaticamente.
+                </CardDescription>
+              </div>
+              <NewPaymentDialog
+                organizationId={primary.organization_id}
+                studentId={student.id}
+                subscriptions={student.subscriptions.map((s) => ({
+                  id: s.id,
+                  plan_name: s.plan?.name ?? "—",
+                  price: s.price,
+                }))}
+                trigger={
+                  <Button size="sm" disabled={student.subscriptions.length === 0}>
+                    Novo pagamento
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Nenhum pagamento ainda.</p>
+              <PaymentsTable
+                organizationId={primary.organization_id}
+                payments={payments}
+                showStudent={false}
+              />
             </CardContent>
           </Card>
         </TabsContent>

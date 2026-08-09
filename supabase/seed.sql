@@ -24,10 +24,11 @@
 -- (Premium/Alternativo) and schedule_slots Mon-Fri (Fase 2); 8 plans
 -- (Bronze/Prata/Ouro/Diamante x Premium/Alternativo) (Fase 3); 4 students
 -- with subscriptions (Fase 4); a few upcoming bookings (Fase 5); two past
--- bookings with checkins, one PRESENT and one ABSENT (Fase 6).
+-- bookings with checkins, one PRESENT and one ABSENT (Fase 6); a few
+-- payments, including one overdue (Fase 7).
 --
--- This file grows across phases: later phases append payments for the
--- same MF Studio org created here.
+-- This file is now complete for the phases implemented so far — see
+-- README's progress table for what's still pending.
 
 do $$
 declare
@@ -261,4 +262,49 @@ begin
     insert into public.checkins (organization_id, booking_id, student_id, status, checked_in_by)
     values (v_org_id, v_absent_booking_id, v_student4_id, 'ABSENT', v_admin_id);
   end if;
+
+  -- 10. Payments (Fase 7). João: one already paid, one due soon (not
+  -- overdue). Maria: one PENDING past its due_date — she shows up as
+  -- inadimplente (section 41's "alguns pagamentos atrasados"), and with
+  -- block_booking_when_overdue = true (the default), her next
+  -- create_booking() call will be rejected until this is settled.
+  insert into public.payments (organization_id, student_id, subscription_id, amount, due_date, status, paid_at, payment_method)
+  select v_org_id, s.id, sub.id, sub.price, (current_date - interval '30 days')::date, 'PAID', now() - interval '29 days', 'PIX'
+  from public.students s
+  join public.subscriptions sub on sub.student_id = s.id and sub.status = 'ACTIVE'
+  where s.profile_id = v_student_id
+    and not exists (
+      select 1 from public.payments p
+      where p.subscription_id = sub.id and p.due_date = (current_date - interval '30 days')::date
+    );
+
+  insert into public.payments (organization_id, student_id, subscription_id, amount, due_date, status)
+  select v_org_id, s.id, sub.id, sub.price, (current_date + interval '5 days')::date, 'PENDING'
+  from public.students s
+  join public.subscriptions sub on sub.student_id = s.id and sub.status = 'ACTIVE'
+  where s.profile_id = v_student_id
+    and not exists (
+      select 1 from public.payments p
+      where p.subscription_id = sub.id and p.due_date = (current_date + interval '5 days')::date
+    );
+
+  insert into public.payments (organization_id, student_id, subscription_id, amount, due_date, status)
+  select v_org_id, s.id, sub.id, sub.price, (current_date - interval '10 days')::date, 'PENDING'
+  from public.students s
+  join public.subscriptions sub on sub.student_id = s.id and sub.status = 'ACTIVE'
+  where s.profile_id = v_student2_id
+    and not exists (
+      select 1 from public.payments p
+      where p.subscription_id = sub.id and p.due_date = (current_date - interval '10 days')::date
+    );
+
+  insert into public.payments (organization_id, student_id, subscription_id, amount, due_date, status)
+  select v_org_id, s.id, sub.id, sub.price, (current_date + interval '10 days')::date, 'PENDING'
+  from public.students s
+  join public.subscriptions sub on sub.student_id = s.id and sub.status = 'ACTIVE'
+  where s.profile_id = v_student4_id
+    and not exists (
+      select 1 from public.payments p
+      where p.subscription_id = sub.id and p.due_date = (current_date + interval '10 days')::date
+    );
 end $$;

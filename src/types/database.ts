@@ -22,6 +22,10 @@ export type StudentStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionStatus = "ACTIVE" | "INACTIVE" | "CANCELLED" | "SUSPENDED";
 export type BookingStatus = "RESERVED" | "CANCELLED" | "CANCELLED_LATE" | "COMPLETED" | "NO_SHOW";
 export type CheckinStatus = "PRESENT" | "ABSENT";
+/** Stored values only — "OVERDUE" is never stored, only computed (see payments_with_status). */
+export type PaymentStatus = "PENDING" | "PAID" | "CANCELLED";
+export type PaymentEffectiveStatus = PaymentStatus | "OVERDUE";
+export type PaymentMethod = "PIX" | "CASH" | "CARD" | "TRANSFER" | "OTHER";
 
 export type Database = {
   public: {
@@ -472,8 +476,91 @@ export type Database = {
           },
         ];
       };
+      payments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          student_id: string;
+          subscription_id: string;
+          amount: number;
+          due_date: string;
+          paid_at: string | null;
+          status: PaymentStatus;
+          payment_method: PaymentMethod | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          student_id: string;
+          subscription_id: string;
+          amount: number;
+          due_date: string;
+          paid_at?: string | null;
+          status?: PaymentStatus;
+          payment_method?: PaymentMethod | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "payments_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      payments_with_status: {
+        Row: Database["public"]["Tables"]["payments"]["Row"] & {
+          effective_status: PaymentEffectiveStatus;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payments_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
     Functions: {
       create_organization: {
         Args: {
@@ -518,6 +605,10 @@ export type Database = {
       mark_attendance: {
         Args: { p_booking_id: string; p_status: string };
         Returns: Database["public"]["Tables"]["checkins"]["Row"];
+      };
+      student_is_overdue: {
+        Args: { p_student_id: string };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;

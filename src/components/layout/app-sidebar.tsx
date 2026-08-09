@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, LayoutDashboard, Settings, Users, Wallet } from "lucide-react";
+import { CalendarDays, CreditCard, LayoutDashboard, Settings, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -50,6 +50,12 @@ const NAV_ITEMS: NavItem[] = [
     label: "Planos",
     icon: Wallet,
     roles: ["OWNER", "ADMIN"],
+  },
+  {
+    href: "/dashboard/payments",
+    label: "Pagamentos",
+    icon: CreditCard,
+    roles: ["OWNER", "ADMIN", "STUDENT"],
   },
   {
     href: "/dashboard/settings",

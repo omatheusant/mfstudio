@@ -204,8 +204,37 @@ Duas formas de registrar o que aconteceu numa reserva, ambas gravando um
   separada de histórico — a mesma fonte que a Fase 5 usa para contar
   sessões usadas no período.
 
+## Financeiro e inadimplência (Fase 7)
+
+- **Sem gateway de pagamento.** `payments` é controle manual — a equipe
+  registra uma cobrança (valor, vencimento, assinatura) e depois marca
+  como paga (forma de pagamento + data) quando o aluno pagar. Nenhuma
+  cobrança é gerada automaticamente a partir da assinatura.
+- **Inadimplência é sempre calculada, nunca marcada manualmente.** Um
+  pagamento é considerado atrasado quando `due_date < hoje` e
+  `status = 'PENDING'` — ponto. Não existe um botão "marcar como
+  atrasado" nem um job que precise rodar para isso ficar correto; é
+  verdade no instante em que é consultado (ver `docs/database.md`
+  §"Esquema (Fase 7)").
+- Só `OWNER`/`ADMIN` criam, editam ou cancelam pagamentos. `PROFESSOR`
+  não vê a tela de Pagamentos — a spec é explícita que professores não
+  gerenciam financeiro (seção 5), e por extensão também não precisam
+  ver dados financeiros de alunos. Um `STUDENT` só vê os próprios
+  pagamentos, sem nenhuma ação disponível (visualização apenas).
+- **Bloqueio de reserva por inadimplência** (`organization_settings.block_booking_when_overdue`,
+  padrão ligado): quando ativo, `create_booking()` recusa a reserva se o
+  aluno tiver qualquer pagamento atrasado — mesma regra de "atrasado"
+  acima, centralizada em `student_is_overdue()`, não reimplementada na
+  Server Action. O aluno inadimplente continua conseguindo ver seu
+  plano, pagamentos e histórico normalmente — só não consegue reservar
+  aulas novas.
+- O dashboard financeiro (cards de inadimplentes/valor em aberto/
+  recebido) já existe em `/dashboard/payments`; a versão consolidada
+  com todos os indicadores de negócio (seção 49 do briefing) chega na
+  Fase 8.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-Professores (CRUD dedicado), pagamentos, inadimplência, dashboard
-operacional e painel de TV chegam nas fases 7–10 — ver README. Nenhuma
-tela atual finge que essas funcionalidades existem.
+Professores (CRUD dedicado), dashboard operacional consolidado e painel
+de TV chegam nas fases 8–10 — ver README. Nenhuma tela atual finge que
+essas funcionalidades existem.

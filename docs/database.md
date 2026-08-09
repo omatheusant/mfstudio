@@ -234,6 +234,44 @@ interpretado no fuso da organização, comparado com
 `checkin_close_minutes_after`. Fora da janela, a função recusa com uma
 mensagem clara em vez de deixar o aluno adivinhar por quê.
 
+## Esquema (Fase 7)
+
+```text
+payments
+    id, organization_id → organizations, student_id → students
+      (on delete cascade), subscription_id → subscriptions
+      (on delete restrict), amount numeric(10,2), due_date,
+    paid_at, status ('PENDING'|'PAID'|'CANCELLED' — nunca 'OVERDUE',
+      ver abaixo), payment_method ('PIX'|'CASH'|'CARD'|'TRANSFER'
+      |'OTHER', opcional), notes, created_at, updated_at
+
+payments_with_status                -- view, não tabela
+    payments.* + effective_status ('OVERDUE' quando status='PENDING'
+      e due_date < hoje; senão igual a status)
+```
+
+**Inadimplência nunca é um valor gravado.** `payments.status` só aceita
+`PENDING`/`PAID`/`CANCELLED` — de propósito, um valor a menos que os 4
+que o briefing do produto lista (seção 18). "Atrasado" é sempre
+*calculado* a partir de `due_date < current_date`, nunca marcado por um
+job ou por quem registra o pagamento; um valor `OVERDUE` gravado
+poderia ficar desatualizado (ex.: se alguém "esquecesse" de rodar o
+job). A view `payments_with_status` é o único lugar onde essa conta é
+feita — todo código de leitura usa a view, nunca a tabela crua, para
+nunca reimplementar essa regra (seção 19: "não duplicar essa lógica em
+diversos componentes frontend").
+
+A view usa `security_invoker = true`: sem isso, uma view no Postgres
+roda com os privilégios de quem a criou (efetivamente ignorando RLS da
+tabela por baixo) — com `security_invoker`, a RLS de `payments` é
+avaliada normalmente, como se a query tivesse sido feita direto na
+tabela.
+
+`student_is_overdue(p_student_id)` — usada por `create_booking()`
+(20260808180004) para aplicar `block_booking_when_overdue` — é a mesma
+regra (`PENDING` + `due_date < hoje`), centralizada numa função em vez
+de reescrita ali dentro.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são
@@ -318,3 +356,10 @@ mostrar. Mesmo raciocínio: inseridas diretamente, não via
 `student_checkin()`/`mark_attendance()`, com `where not exists` no lugar
 do índice único parcial (que só cobre `status = 'RESERVED'`) para manter
 o script idempotente.
+
+Desde a Fase 7, também semeia alguns pagamentos: um já pago e um a
+vencer para o João, um **atrasado** (`due_date` no passado, ainda
+`PENDING`) para a Maria — ela aparece como inadimplente assim que o
+seed roda, e com `block_booking_when_overdue` ligado (padrão), a
+próxima tentativa dela de reservar é recusada até o pagamento ser
+regularizado — e um a vencer para a Beatriz.
