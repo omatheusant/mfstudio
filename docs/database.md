@@ -272,6 +272,29 @@ tabela.
 regra (`PENDING` + `due_date < hoje`), centralizada numa função em vez
 de reescrita ali dentro.
 
+## RPCs públicas (Fase 10) — painel de TV
+
+`get_display_organization`, `get_display_agenda` e `get_display_roster`
+(20260808190001) são as **únicas** funções deste schema com
+`grant ... to anon` — todas as outras exigem um usuário autenticado. O
+painel de TV (`/studio/[slug]/display`) roda sem login, então não há
+RLS/`auth.uid()` para se apoiar; a segurança aqui vem inteiramente de
+cada função só devolver um conjunto mínimo e deliberadamente
+não-sensível de colunas:
+
+- `get_display_organization`: nome, logo, fuso — nada mais.
+- `get_display_agenda`: horário, categoria, capacidade e contagem de
+  reservas por horário do dia — nenhum dado de aluno.
+- `get_display_roster`: **primeiro nome apenas**
+  (`split_part(full_name, ' ', 1)`) + um status simplificado
+  (`RESERVED`/`PRESENT`/`ABSENT`) — nunca e-mail, telefone, id do aluno
+  ou qualquer outro campo de `profiles`/`students`.
+
+Todas recebem `p_org_slug` (identificador já público, usado na própria
+URL) em vez de um `organization_id` — trocar o slug na URL só troca
+qual organização é exibida, nunca vaza dados de outra além do que essas
+três funções já expõem de propósito.
+
 ## Funções auxiliares de RLS
 
 Ficam em `20260808120004_rls_helper_functions.sql`. Todas são

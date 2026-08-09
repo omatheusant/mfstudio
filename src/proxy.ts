@@ -54,7 +54,11 @@ export async function proxy(request: NextRequest) {
     isAuthRoute ||
     pathname === "/" ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/studio/display");
+    // /studio/[slug]/display — the unattended TV panel. Public by design
+    // (no login on a lobby TV); the RPCs it calls only ever expose
+    // first names + presence, never anything sensitive. See
+    // 20260808190001_rpc_display.sql.
+    pathname.startsWith("/studio/");
 
   if (!isAuthenticated && !isPublicRoute) {
     const url = request.nextUrl.clone();

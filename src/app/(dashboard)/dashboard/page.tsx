@@ -12,6 +12,7 @@ import { getOrganizationMembers } from "@/features/organizations/queries";
 import { getStudentByProfileId } from "@/features/students/queries";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -149,9 +150,20 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral de {primary.organization.name}.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Visão geral de {primary.organization.name}.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          render={
+            <a href={`/studio/${primary.organization.slug}/display`} target="_blank" rel="noreferrer">
+              Abrir painel de TV
+            </a>
+          }
+        />
       </div>
 
       <MetricsCards metrics={metrics} />

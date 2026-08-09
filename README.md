@@ -31,7 +31,7 @@ qualquer Studio.
 | 7 | Financeiro e inadimplência (`payments`, bloqueio de reserva) | ✅ |
 | 8 | Dashboard administrativo (indicadores + agenda do dia) | ✅ |
 | 9 | Portal do aluno (home consolidada + Meu perfil) | ✅ |
-| 10 | Painel de TV (`/studio/display`) | ⏳ |
+| 10 | Painel de TV (`/studio/[slug]/display`, público) | ✅ |
 | 11 | Testes das regras críticas, seed completo, documentação final | ⏳ |
 
 ## Arquitetura e multi-tenancy
@@ -144,6 +144,8 @@ Abra [http://localhost:3000](http://localhost:3000).
   faça check-in no dia (dentro da janela configurada em Configurações →
   Agenda e financeiro) e veja suas cobranças, tudo a partir dos botões
   da home.
+- **Painel de TV**: acesse `/studio/mf-studio/display` (sem login) — ou
+  clique em "Abrir painel de TV" no Dashboard.
 
 ## Variáveis de ambiente
 
@@ -182,7 +184,8 @@ src/
 │   │       └── settings/          # Studio, agenda/financeiro, categorias, horários
 │   ├── auth/confirm/              # route handler de confirmação de e-mail / convite
 │   ├── onboarding/                # criação da organização (primeiro acesso)
-│   └── set-password/              # primeira senha de usuários convidados (alunos)
+│   ├── set-password/              # primeira senha de usuários convidados (alunos)
+│   └── studio/[slug]/display/     # painel de TV — público, sem login
 ├── components/
 │   ├── layout/                    # sidebar, menu do usuário
 │   └── ui/                        # shadcn/ui (gerado — não editar à mão)
@@ -195,7 +198,8 @@ src/
 │   ├── checkins/                   # presença (RPCs student_checkin/mark_attendance)
 │   ├── payments/                   # pagamentos + view payments_with_status (inadimplência)
 │   ├── dashboard/                  # indicadores de negócio (agrega os módulos acima)
-│   └── profile/                    # edição do próprio perfil
+│   ├── profile/                    # edição do próprio perfil
+│   └── display/                    # RPCs públicas do painel de TV (dados mínimos)
 ├── lib/
 │   ├── auth/                      # DAL (data access layer) + Server Actions de auth
 │   ├── constants/                  # opções fixas de UI (dias da semana, fusos, planos)

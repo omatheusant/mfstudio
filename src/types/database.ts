@@ -610,6 +610,25 @@ export type Database = {
         Args: { p_student_id: string };
         Returns: boolean;
       };
+      get_display_organization: {
+        Args: { p_org_slug: string };
+        Returns: { name: string; logo_url: string | null; timezone: string }[];
+      };
+      get_display_agenda: {
+        Args: { p_org_slug: string; p_date?: string };
+        Returns: {
+          slot_id: string;
+          start_time: string;
+          end_time: string;
+          category_name: string;
+          capacity: number;
+          reserved: number;
+        }[];
+      };
+      get_display_roster: {
+        Args: { p_org_slug: string; p_slot_id: string; p_date?: string };
+        Returns: { first_name: string; status: string }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

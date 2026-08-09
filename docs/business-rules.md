@@ -297,7 +297,30 @@ pagamentos) já existia desde as Fases 5–7; a Fase 9 entrega a
   uma tela exclusiva do aluno — todo usuário deveria poder editar o
   próprio nome/telefone.
 
+## Painel de TV (Fase 10)
+
+- **Rota real: `/studio/[slug]/display`, não `/studio/display`.** O
+  briefing (seção 22) descreve a rota sem parâmetro, implicitamente
+  assumindo um único Studio. Como o critério de sucesso do produto
+  exige que um segundo Studio funcione sem alteração de código (seção
+  54), a rota precisa saber *qual* organização exibir — o slug (já
+  público, usado em URLs) resolve isso sem exigir login.
+- **Pública, sem autenticação** — pensada para rodar sem supervisão
+  numa TV/tablet na recepção do Studio. Isso só é seguro porque os
+  dados expostos são deliberadamente mínimos: nome do Studio, ocupação
+  por horário (números, sem nomes) e, ao selecionar uma aula, **apenas o
+  primeiro nome** de cada aluno + um símbolo de presença (`✓`/`✗`/`–`).
+  Nunca e-mail, telefone, ou qualquer outro dado. Ver
+  `docs/database.md` §"RPCs públicas (Fase 10)".
+- **Atualização automática por polling** (a cada 20s), não WebSockets —
+  a agenda e, se uma aula estiver selecionada, a lista de alunos dessa
+  aula são recarregadas juntas. Simples o bastante para o volume de uma
+  academia; não há necessidade de tempo real sub-segundo aqui.
+- A equipe (`OWNER`/`ADMIN`) encontra o link pelo botão "Abrir painel de
+  TV" no Dashboard — não precisa digitar a URL de cor.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
-CRUD dedicado de professores e o painel de TV chegam na Fase 10 — ver
-README. Nenhuma tela atual finge que essas funcionalidades existem.
+CRUD dedicado de professores fica de fora do MVP — ver README para o
+que ainda está planejado (Fase 11: testes e documentação final).
+Nenhuma tela atual finge que essa ou outra funcionalidade existe.
