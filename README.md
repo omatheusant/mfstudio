@@ -32,7 +32,19 @@ qualquer Studio.
 | 8 | Dashboard administrativo (indicadores + agenda do dia) | ✅ |
 | 9 | Portal do aluno (home consolidada + Meu perfil) | ✅ |
 | 10 | Painel de TV (`/studio/[slug]/display`, público) | ✅ |
-| 11 | Testes das regras críticas, seed completo, documentação final | ⏳ |
+| 11 | Testes das regras críticas, seed completo, documentação final | ⚠️ ver nota |
+
+> **Nota sobre a Fase 11**: os testes de integração (`tests/`, seção
+> [Testes](#testes)) estão escritos cobrindo as 11 regras críticas da
+> seção 44 do briefing, mas **não foram executados contra um Supabase
+> real neste ambiente** — o ambiente de desenvolvimento usado para
+> construir o projeto não tinha Docker (então nada de Supabase local)
+> nem credenciais de um projeto hospedado. Escrevendo os testes,
+> encontrei e corrigi um bug real de timezone em `create_booking()` (ver
+> `docs/business-rules.md`), o que dá alguma confiança de que a lógica
+> foi revisada com cuidado — mas "escrito e revisado" não é o mesmo que
+> "executado e verde". Rode `npm test` com suas próprias credenciais
+> antes de confiar nisso para produção.
 
 ## Arquitetura e multi-tenancy
 
@@ -158,6 +170,21 @@ npm run dev      # ambiente de desenvolvimento (Turbopack)
 npm run build    # build de produção
 npm run start    # serve o build de produção
 npm run lint     # ESLint
+npm test         # testes de integração das regras críticas (ver Testes)
+```
+
+## Testes
+
+As regras críticas do produto (seção 44 do briefing — sessões,
+capacidade/concorrência, cancelamento, inadimplência, autorização,
+isolamento multi-tenant) são testadas com testes de **integração** que
+rodam contra um Supabase real, não mocks — ver
+[`tests/README.md`](tests/README.md) para pré-requisitos e detalhes.
+Requer `SUPABASE_SERVICE_ROLE_KEY` em `.env.local` (além das outras
+variáveis) e as migrations + seed aplicadas.
+
+```bash
+npm test
 ```
 
 ## Deploy
@@ -210,6 +237,7 @@ src/
 supabase/
 ├── migrations/          # SQL versionado
 └── seed.sql             # dados de desenvolvimento (MF Studio)
+tests/                   # testes de integração (Fase 11) — ver tests/README.md
 docs/
 ├── architecture.md
 ├── database.md

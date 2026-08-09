@@ -176,12 +176,16 @@ RPCs abaixo, exatamente como `organizations` só existe via
 ### RPCs `create_booking` / `cancel_booking`
 
 Toda a "Regra central de reservas" (seção 11 do briefing do produto)
-está implementada em `20260808160003_rpc_bookings.sql`, numa função só,
-para nunca duplicar ou dessincronizar a regra entre banco e aplicação.
-`create_booking(p_student_id, p_schedule_slot_id, p_date)` verifica, nesta
-ordem: horário existe/ativo, data bate com o `day_of_week` do horário,
-data não é passada, autorização (o próprio aluno ou `OWNER`/`ADMIN` do
-horário), aluno `ACTIVE`, assinatura `ACTIVE`, categoria do horário
+está implementada em `20260808160003_rpc_bookings.sql` (com um ajuste em
+`20260808180004`, mais um em `20260808200001` — ver abaixo), numa função
+só, para nunca duplicar ou dessincronizar a regra entre banco e
+aplicação. `create_booking(p_student_id, p_schedule_slot_id, p_date)`
+verifica, nesta ordem: horário existe/ativo, data bate com o
+`day_of_week` do horário, data não é passada **no fuso da própria
+organização** (não em UTC — ver `docs/business-rules.md` §"Testes e um
+bug de fuso horário corrigido", Fase 11), autorização (o próprio aluno
+ou `OWNER`/`ADMIN` do horário), aluno `ACTIVE`, assinatura `ACTIVE`,
+bloqueio por inadimplência se configurado, categoria do horário
 permitida pelo plano, limite de sessões do período (semana ISO
 segunda-domingo, ou mês corrido) ainda não atingido, nenhuma reserva
 conflitante (horário sobreposto) na mesma data, e por fim capacidade.
@@ -320,10 +324,11 @@ subquery à mão.
 
 ## Validação de isolamento multi-tenant
 
-Ao adicionar qualquer tabela nova, valide manualmente (ou em teste
-automatizado — fase 11) que um membro da organização A não vê linhas da
-organização B. Exemplo, usando dois usuários de teste em organizações
-diferentes (troque os e-mails/senha pelos do seu seed):
+Ao adicionar qualquer tabela nova, valide manualmente (ou estenda
+`tests/06-multi-tenant-isolation.test.ts` — Fase 11) que um membro da
+organização A não vê linhas da organização B. Exemplo, usando dois
+usuários de teste em organizações diferentes (troque os e-mails/senha
+pelos do seu seed):
 
 ```sql
 -- Logado como usuário da organização A (via cliente anon key + JWT dele):

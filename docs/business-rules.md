@@ -319,6 +319,27 @@ pagamentos) já existia desde as Fases 5–7; a Fase 9 entrega a
 - A equipe (`OWNER`/`ADMIN`) encontra o link pelo botão "Abrir painel de
   TV" no Dashboard — não precisa digitar a URL de cor.
 
+## Testes e um bug de fuso horário corrigido (Fase 11)
+
+`tests/` cobre as 11 regras críticas da seção 44 do briefing como
+testes de integração contra um Supabase real — ver `tests/README.md`.
+**Escritos, mas não executados neste ambiente de desenvolvimento** (sem
+Docker para Supabase local, sem credenciais de um projeto hospedado) —
+ver a nota na tabela de progresso do README.
+
+Escrever o teste de cancelamento (dentro/fora da janela) expôs um bug
+real: `create_booking()` recusava "não é possível reservar uma data no
+passado" comparando a data pedida contra `current_date` do Postgres —
+que lê em **UTC** no Supabase, não no fuso da organização. Para o MF
+Studio (America/Sao_Paulo, UTC-3), isso fazia a checagem usar a data de
+"amanhã" (UTC) durante as primeiras ~3 horas de cada dia UTC (21h–00h
+horário de Brasília) — nessa janela, um aluno tentando reservar um
+horário mais tarde **no mesmo dia local** seria recusado incorretamente.
+Corrigido em `20260808200001_fix_create_booking_timezone.sql`, comparando
+contra `(now() at time zone organizations.timezone)::date` — a mesma
+lição da seção 40 do briefing ("evitar timezone hardcoded espalhado pela
+aplicação"), desta vez encontrada dentro do próprio banco.
+
 ## O que ainda NÃO existe (não confundir com "planejado para nunca existir")
 
 CRUD dedicado de professores fica de fora do MVP — ver README para o

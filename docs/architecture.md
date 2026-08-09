@@ -83,6 +83,35 @@ planos, agenda, reservas, check-ins, pagamentos, dashboard) deve viver,
 separada por domínio dentro do monólito — sem microserviços, mas também
 sem tudo misturado em `app/`.
 
+## Onde vive a lógica de negócio crítica
+
+Regras que precisam de uma garantia transacional forte — capacidade
+(sem overbooking sob concorrência), limite de sessões, janela de
+cancelamento/check-in, inadimplência, isolamento multi-tenant — vivem em
+**funções PL/pgSQL no Postgres** (`create_booking`, `cancel_booking`,
+`student_checkin`, `mark_attendance`, `student_is_overdue`, a view
+`payments_with_status`), não em Server Actions TypeScript. Server
+Actions ficam finas: validam o formato do input (Zod) e chamam a
+função/RPC certa. Duas razões:
+
+1. **Concorrência.** `SELECT ... FOR UPDATE` dentro de uma função
+   plpgsql é a única forma de serializar tentativas simultâneas de forma
+   correta — replicar isso em JavaScript exigiria lógica de lock
+   distribuído que o projeto deliberadamente não tem (sem Redis).
+2. **Uma fonte da verdade.** Uma regra escrita uma vez no banco vale
+   para qualquer caminho de acesso (app, SQL Editor, um futuro cliente
+   mobile) — escrita em TypeScript, só valeria para quem passasse pelo
+   Server Action.
+
+Ver `docs/database.md` para o catálogo completo dessas funções e
+`docs/business-rules.md` para o que cada uma garante.
+
+## Testes
+
+As regras acima são testadas com testes de **integração** contra um
+Supabase real (`tests/`, `npm test`) — não haveria o que testar com
+mocks, já que a lógica em si está no Postgres. Ver `tests/README.md`.
+
 ## Decisões deliberadas (para não reabrir sem motivo)
 
 - **Sem Prisma.** Migrations SQL puras em `supabase/migrations/`, versionadas.
