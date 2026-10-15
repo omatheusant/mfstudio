@@ -76,8 +76,8 @@ export function TodayAgenda({
                     <RosterDialog
                       roster={rosters[index]}
                       trigger={
-                        <Button variant="ghost" size="sm">
-                          Ver
+                        <Button variant="outline" size="sm">
+                          Ver alunos
                         </Button>
                       }
                     />

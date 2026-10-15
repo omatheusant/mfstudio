@@ -48,7 +48,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   // Routes a logged-in user should be bounced away from (back to /dashboard).
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isAuthRoute = pathname.startsWith("/login");
   // Routes anyone — logged in or not — may access.
   const isPublicRoute =
     isAuthRoute ||

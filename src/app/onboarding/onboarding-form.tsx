@@ -25,8 +25,8 @@ export function OnboardingForm() {
       <CardHeader>
         <CardTitle>Crie seu Studio</CardTitle>
         <CardDescription>
-          Você será o proprietário (OWNER) deste Studio na ELEVO FIT. Você
-          poderá cadastrar horários, planos, professores e alunos depois.
+          Você será o proprietário (OWNER) deste Studio. Você poderá
+          cadastrar horários, planos, professores e alunos depois.
         </CardDescription>
       </CardHeader>
       <CardContent>

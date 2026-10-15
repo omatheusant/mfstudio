@@ -18,7 +18,7 @@ import { AvailableSlots } from "./_components/available-slots";
 import { MyBookingsList } from "./_components/my-bookings-list";
 
 export const metadata: Metadata = {
-  title: "Reservar aula — ELEVO FIT",
+  title: "Reservar aula — MF Studio",
 };
 
 function todayISO() {

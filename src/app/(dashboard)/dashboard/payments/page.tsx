@@ -26,7 +26,7 @@ import type { PaymentEffectiveStatus } from "@/types/database";
 import { PaymentsTable } from "./_components/payments-table";
 
 export const metadata: Metadata = {
-  title: "Pagamentos — ELEVO FIT",
+  title: "Pagamentos — MF Studio",
 };
 
 const PAGE_SIZE = 20;

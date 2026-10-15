@@ -8,7 +8,7 @@ import { getScheduleCategories } from "@/features/schedules/queries";
 import { PlansTable } from "./_components/plans-table";
 
 export const metadata: Metadata = {
-  title: "Planos — ELEVO FIT",
+  title: "Planos — MF Studio",
 };
 
 export default async function PlansPage() {

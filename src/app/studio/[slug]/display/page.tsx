@@ -16,7 +16,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const org = await getDisplayOrganization(slug);
-  return { title: org ? `${org.name} — Painel` : "Painel — ELEVO FIT" };
+  return { title: org ? `${org.name} — Painel` : "Painel — MF Studio" };
 }
 
 export default async function StudioDisplayPage({

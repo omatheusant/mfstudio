@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-ELEVO FIT é um monólito Next.js (App Router). Não há backend separado:
+MF Studio é um monólito Next.js (App Router). Não há backend separado:
 mutações passam por **Server Actions**, integrações HTTP externas (se
 algum dia necessárias) por **Route Handlers**, e toda persistência é
 **Supabase Postgres**, acessado com a chave anônima e protegido por Row

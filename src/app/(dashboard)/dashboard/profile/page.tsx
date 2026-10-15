@@ -13,7 +13,7 @@ import {
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = {
-  title: "Meu perfil — ELEVO FIT",
+  title: "Meu perfil — MF Studio",
 };
 
 export default async function ProfilePage() {

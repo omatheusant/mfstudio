@@ -51,18 +51,27 @@ begin
   -- the seed is run, for the attendance-history example bookings below.
   v_past_monday := date_trunc('week', current_date)::date - 7;
   -- 1. Fake auth users (idempotent: safe to re-run).
+  -- All of confirmation_token/recovery_token/email_change/phone_change and
+  -- their *_token_new/*_token_current/reauthentication_token siblings must
+  -- be '' rather than the column default of NULL — GoTrue scans every one
+  -- of these as a Go string on login and a NULL there fails with
+  -- "sql: Scan error ... converting NULL to string is unsupported" (500 on
+  -- /auth/v1/token), even though only confirmation/recovery are ever
+  -- actually used by this seed's flows.
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-    created_at, updated_at, confirmation_token, recovery_token
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token
   ) values
-    ('00000000-0000-0000-0000-000000000000', v_owner_id, 'authenticated', 'authenticated', 'owner@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Marcos Ferreira"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_admin_id, 'authenticated', 'authenticated', 'admin@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Ana Paula"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_prof_id, 'authenticated', 'authenticated', 'professor@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Carlos Nogueira"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_student_id, 'authenticated', 'authenticated', 'aluno@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"João Aluno"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_student2_id, 'authenticated', 'authenticated', 'maria.silva@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Maria Silva"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_student3_id, 'authenticated', 'authenticated', 'pedro.santos@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Pedro Santos"}', now(), now(), '', ''),
-    ('00000000-0000-0000-0000-000000000000', v_student4_id, 'authenticated', 'authenticated', 'beatriz.costa@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Beatriz Costa"}', now(), now(), '', '')
+    ('00000000-0000-0000-0000-000000000000', v_owner_id, 'authenticated', 'authenticated', 'owner@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Marcos Ferreira"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_admin_id, 'authenticated', 'authenticated', 'admin@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Ana Paula"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_prof_id, 'authenticated', 'authenticated', 'professor@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Carlos Nogueira"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student_id, 'authenticated', 'authenticated', 'aluno@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"João Aluno"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student2_id, 'authenticated', 'authenticated', 'maria.silva@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Maria Silva"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student3_id, 'authenticated', 'authenticated', 'pedro.santos@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Pedro Santos"}', now(), now(), '', '', '', '', '', '', '', ''),
+    ('00000000-0000-0000-0000-000000000000', v_student4_id, 'authenticated', 'authenticated', 'beatriz.costa@mfstudio.dev', crypt(v_password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Beatriz Costa"}', now(), now(), '', '', '', '', '', '', '', '')
   on conflict (id) do nothing;
 
   insert into auth.identities (
@@ -234,6 +243,7 @@ begin
   where s.profile_id = v_student_id
     and ss.schedule_category_id = v_premium_id
     and ss.start_time = '18:00'
+    and ss.day_of_week = extract(dow from v_past_monday)::smallint
     and not exists (
       select 1 from public.bookings b
       where b.student_id = s.id and b.schedule_slot_id = ss.id and b.date = v_past_monday
@@ -242,7 +252,9 @@ begin
 
   if v_completed_booking_id is not null then
     insert into public.checkins (organization_id, booking_id, student_id, status, checked_in_by)
-    values (v_org_id, v_completed_booking_id, v_student_id, 'PRESENT', v_student_id);
+    select v_org_id, v_completed_booking_id, s.id, 'PRESENT', v_student_id
+    from public.students s
+    where s.profile_id = v_student_id and s.organization_id = v_org_id;
   end if;
 
   insert into public.bookings (organization_id, student_id, schedule_slot_id, date, status)
@@ -252,6 +264,7 @@ begin
   where s.profile_id = v_student4_id
     and ss.schedule_category_id = v_premium_id
     and ss.start_time = '19:00'
+    and ss.day_of_week = extract(dow from v_past_monday + 2)::smallint
     and not exists (
       select 1 from public.bookings b
       where b.student_id = s.id and b.schedule_slot_id = ss.id and b.date = v_past_monday + 2
@@ -260,7 +273,9 @@ begin
 
   if v_absent_booking_id is not null then
     insert into public.checkins (organization_id, booking_id, student_id, status, checked_in_by)
-    values (v_org_id, v_absent_booking_id, v_student4_id, 'ABSENT', v_admin_id);
+    select v_org_id, v_absent_booking_id, s.id, 'ABSENT', v_admin_id
+    from public.students s
+    where s.profile_id = v_student4_id and s.organization_id = v_org_id;
   end if;
 
   -- 10. Payments (Fase 7). João: one already paid, one due soon (not

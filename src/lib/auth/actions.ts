@@ -8,7 +8,6 @@ import {
   createOrganizationSchema,
   loginSchema,
   setPasswordSchema,
-  signupSchema,
 } from "@/lib/validations/auth";
 
 export type ActionState = { error?: string } | undefined;
@@ -47,45 +46,6 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
-}
-
-export async function signup(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const parsed = signupSchema.safeParse({
-    fullName: formData.get("fullName"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-  }
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${siteUrl}/auth/confirm`,
-    },
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // If the Supabase project has email confirmation disabled, signUp()
-  // already returns a live session — skip straight to onboarding. Otherwise
-  // the user needs to click the confirmation link first.
-  if (data.session) {
-    redirect("/onboarding");
-  }
-
-  redirect("/signup/confirm-email");
 }
 
 /**

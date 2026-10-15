@@ -15,7 +15,7 @@ import { ScheduleSlotsPanel } from "./_components/schedule-slots-panel";
 import { StudioForm } from "./_components/studio-form";
 
 export const metadata: Metadata = {
-  title: "Configurações — ELEVO FIT",
+  title: "Configurações — MF Studio",
 };
 
 export default async function SettingsPage() {

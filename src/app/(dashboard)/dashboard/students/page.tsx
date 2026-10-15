@@ -26,7 +26,7 @@ import { StudentDialog } from "./_components/student-dialog";
 import { StudentsTable } from "./_components/students-table";
 
 export const metadata: Metadata = {
-  title: "Alunos — ELEVO FIT",
+  title: "Alunos — MF Studio",
 };
 
 const PAGE_SIZE = 20;

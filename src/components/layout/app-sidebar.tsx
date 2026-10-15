@@ -74,13 +74,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/profile", label: "Meu perfil", icon: User },
 ];
 
-export function AppSidebar({
-  organizationName,
-  role,
-}: {
-  organizationName: string;
-  role: OrganizationRole;
-}) {
+export function AppSidebar({ role }: { role: OrganizationRole }) {
   const pathname = usePathname();
   const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role));
 
@@ -89,16 +83,11 @@ export function AppSidebar({
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
-            E
+            M
           </span>
-          <div className="flex flex-col overflow-hidden">
-            <span className="truncate text-sm font-semibold leading-tight">
-              ELEVO FIT
-            </span>
-            <span className="truncate text-xs text-muted-foreground leading-tight">
-              {organizationName}
-            </span>
-          </div>
+          <span className="truncate text-sm font-semibold leading-tight">
+            MF STUDIO
+          </span>
         </div>
       </SidebarHeader>
       <SidebarContent>

@@ -22,8 +22,8 @@ export function SetPasswordForm() {
       <CardHeader>
         <CardTitle>Defina sua senha</CardTitle>
         <CardDescription>
-          Você foi convidado para um Studio na ELEVO FIT. Escolha uma senha
-          para acessar sua conta nas próximas vezes.
+          Você foi convidado para o MF Studio. Escolha uma senha para acessar
+          sua conta nas próximas vezes.
         </CardDescription>
       </CardHeader>
       <CardContent>

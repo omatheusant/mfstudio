@@ -29,7 +29,7 @@ import { NotesForm } from "./_components/notes-form";
 import { StudentStatusSwitch } from "./_components/student-status-switch";
 
 export const metadata: Metadata = {
-  title: "Aluno — ELEVO FIT",
+  title: "Aluno — MF Studio",
 };
 
 export default async function StudentDetailPage({

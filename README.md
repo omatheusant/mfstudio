@@ -1,9 +1,15 @@
-# ELEVO FIT
+# MF Studio
 
-Plataforma SaaS multi-tenant para gestão de studios de treinamento
-personalizado, academias boutique e personal trainers. O **MF Studio** é o
-primeiro tenant piloto — o produto em si é genérico e configurável para
-qualquer Studio.
+Sistema de gestão sob medida para o **MF Studio** — alunos, planos,
+horários, reservas, check-in, presença e financeiro em um só lugar. Não é
+mais vendido como SaaS multi-tenant genérico: o cadastro público
+(`/signup`) foi fechado e a marca do produto é a do próprio cliente.
+
+O banco ainda modela tudo por `organization` (com isolamento via RLS) —
+isso não é sobre suportar múltiplos clientes, é a mesma técnica de
+autorização por papel (OWNER/ADMIN/PROFESSOR/STUDENT) que o produto já
+usava, mantida porque remover teria custo/risco sem nenhum ganho real para
+um sistema de cliente único.
 
 > **Status do projeto**: em construção, por fases. Veja [Progresso](#progresso)
 > abaixo para o que já existe e o que ainda não foi implementado. Nenhuma
@@ -139,12 +145,11 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000).
 
-- **Criar seu próprio Studio**: acesse `/signup`, confirme o e-mail (se a
-  confirmação estiver habilitada no seu projeto Supabase) e você será
-  levado a `/onboarding` para nomear seu Studio — isso te torna `OWNER`.
-  Em **Alunos → Novo aluno**, cadastrar alguém envia um convite de e-mail
-  de verdade (via Supabase Auth) — precisa de `SUPABASE_SERVICE_ROLE_KEY`
-  configurada.
+- Não há cadastro público — a organização MF Studio já existe (via seed em
+  dev, ou criada manualmente em produção) e todo mundo além do primeiro
+  `OWNER` entra por convite. Em **Alunos → Novo aluno**, cadastrar alguém
+  envia um convite de e-mail de verdade (via Supabase Auth) — precisa de
+  `SUPABASE_SERVICE_ROLE_KEY` configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
   qualquer um dos e-mails da tabela acima. Como `owner@mfstudio.dev`/
   `admin@mfstudio.dev`, o **Dashboard** já mostra indicadores reais de
@@ -198,7 +203,7 @@ npm test
 ```text
 src/
 ├── app/
-│   ├── (auth)/                    # /login, /signup — públicas
+│   ├── (auth)/                    # /login — pública (sem cadastro público)
 │   ├── (dashboard)/
 │   │   └── dashboard/
 │   │       ├── page.tsx           # dashboard (equipe) / home do portal (aluno)

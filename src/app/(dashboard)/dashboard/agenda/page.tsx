@@ -21,7 +21,7 @@ import {
 import { RosterDialog } from "./_components/roster-dialog";
 
 export const metadata: Metadata = {
-  title: "Agenda — ELEVO FIT",
+  title: "Agenda — MF Studio",
 };
 
 function todayISO() {

@@ -35,7 +35,7 @@ import { StudentHome, type StudentHomePlan } from "./_components/student-home";
 import { TodayAgenda } from "./_components/today-agenda";
 
 export const metadata: Metadata = {
-  title: "Dashboard — ELEVO FIT",
+  title: "Dashboard — MF Studio",
 };
 
 const ROLE_LABEL: Record<OrganizationRole, string> = {
