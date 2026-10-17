@@ -88,8 +88,8 @@ para as regras de negócio já implementadas.
 
 4. Em **Authentication → URL Configuration**, adicione
    `http://localhost:3000/auth/confirm` às *Redirect URLs* (necessário
-   para os links de confirmação de e-mail e de convite de aluno
-   funcionarem). Em produção, adicione também a URL do seu domínio — ver
+   para o link de confirmação de e-mail do primeiro `OWNER` funcionar).
+   Em produção, adicione também a URL do seu domínio — ver
    [Deploy](#deploy).
 
 ### Rodando as migrations
@@ -147,9 +147,11 @@ Abra [http://localhost:3000](http://localhost:3000).
 
 - Não há cadastro público — a organização MF Studio já existe (via seed em
   dev, ou criada manualmente em produção) e todo mundo além do primeiro
-  `OWNER` entra por convite. Em **Alunos → Novo aluno**, cadastrar alguém
-  envia um convite de e-mail de verdade (via Supabase Auth) — precisa de
-  `SUPABASE_SERVICE_ROLE_KEY` configurada.
+  `OWNER` é cadastrado pela equipe. Em **Alunos → Novo aluno**, quem
+  cadastra define o e-mail e a senha do aluno (nenhum e-mail é enviado —
+  o Supabase não tem SMTP de produção configurado neste projeto; a
+  equipe repassa as credenciais diretamente) e cria uma conta real do
+  Supabase Auth — precisa de `SUPABASE_SERVICE_ROLE_KEY` configurada.
 - **Usar o MF Studio de exemplo**: rode o seed e acesse `/login` com
   qualquer um dos e-mails da tabela acima. Como `owner@mfstudio.dev`/
   `admin@mfstudio.dev`, o **Dashboard** já mostra indicadores reais de
@@ -195,8 +197,8 @@ npm test
 ## Deploy
 
 1. **Supabase**: crie/linke o projeto de produção e aplique as migrations (`npx supabase db push`). **Não** rode `supabase/seed.sql` em produção.
-2. **Vercel**: importe o repositório, configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` (URL de produção) e `SUPABASE_SERVICE_ROLE_KEY` (necessária para convidar alunos — Project Settings → API → **service_role**, nunca a mesma coisa que a anon key) nas variáveis de ambiente do projeto, e faça o deploy.
-3. No painel do Supabase, em **Authentication → URL Configuration**, adicione a URL de produção (`https://seu-dominio.com/auth/confirm`) às *Redirect URLs* — necessário para os links de confirmação de e-mail e de convite de aluno.
+2. **Vercel**: importe o repositório, configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` (URL de produção) e `SUPABASE_SERVICE_ROLE_KEY` (necessária para cadastrar alunos — Project Settings → API → **service_role**, nunca a mesma coisa que a anon key) nas variáveis de ambiente do projeto, e faça o deploy.
+3. No painel do Supabase, em **Authentication → URL Configuration**, adicione a URL de produção (`https://seu-dominio.com/auth/confirm`) às *Redirect URLs* — necessário para o link de confirmação de e-mail do primeiro `OWNER`.
 
 ## Estrutura do projeto
 
@@ -225,7 +227,7 @@ src/
 │   ├── organizations/              # organização + organization_settings
 │   ├── schedules/                  # categorias + horários
 │   ├── plans/                      # planos + categorias permitidas
-│   ├── students/                   # alunos + assinaturas (convite via admin API)
+│   ├── students/                   # alunos + assinaturas (criação via admin API, sem envio de e-mail)
 │   ├── bookings/                   # reservas (RPCs create_booking/cancel_booking)
 │   ├── checkins/                   # presença (RPCs student_checkin/mark_attendance)
 │   ├── payments/                   # pagamentos + view payments_with_status (inadimplência)

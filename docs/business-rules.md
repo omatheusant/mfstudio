@@ -98,13 +98,17 @@ concordando entre si**:
 ## Alunos e assinaturas (Fase 4)
 
 - **Cadastrar um aluno cria uma conta de verdade.** Não existe "aluno no
-  papel" sem login — cadastrar em Alunos → Novo aluno convida um usuário
-  real do Supabase Auth (e-mail com link de convite), cria a membership
+  papel" sem login — cadastrar em Alunos → Novo aluno cria um usuário
+  real do Supabase Auth com o e-mail e a senha que `OWNER`/`ADMIN`
+  escolherem (`email_confirm: true`, sem e-mail de convite — o Supabase
+  não tem SMTP de produção configurado neste projeto, então a equipe
+  repassa e-mail/senha ao aluno diretamente), cria a membership
   (`role = 'STUDENT'`) e a assinatura no plano escolhido, tudo em uma
-  única ação. Se qualquer etapa falhar depois do convite, a conta criada
-  é removida — não fica usuário órfão sem organização.
-- No primeiro acesso (link do convite), o aluno é levado a `/set-password`
-  para escolher sua própria senha antes de continuar para o painel.
+  única ação. Se qualquer etapa falhar depois da criação do usuário, a
+  conta criada é removida — não fica usuário órfão sem organização.
+- O aluno faz login direto com o e-mail/senha informados pela equipe —
+  não há fluxo de confirmação por e-mail nem de troca de senha no
+  primeiro acesso.
 - **Status do aluno (`students.status`) é independente do status de
   acesso (`organization_members.status`).** Um aluno pode ficar
   `INACTIVE` como cliente (pausou, cancelou) sem perder o login — ver o

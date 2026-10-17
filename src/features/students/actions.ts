@@ -14,13 +14,16 @@ import {
 export type ActionState = { error?: string; success?: boolean } | undefined;
 
 /**
- * Creates a student end-to-end: invites a real Supabase Auth user (the
- * only step that needs the service-role admin client — see
- * lib/supabase/admin.ts), then does everything else (membership, student
- * record, subscription) through the caller's own RLS-governed session,
- * exactly like any other write in this app. If any step after the invite
- * fails, the orphaned auth user is deleted so retrying doesn't leave
- * dangling accounts.
+ * Creates a student end-to-end: creates a real Supabase Auth user with
+ * the e-mail/senha the admin chose (the only step that needs the
+ * service-role admin client — see lib/supabase/admin.ts), then does
+ * everything else (membership, student record, subscription) through the
+ * caller's own RLS-governed session, exactly like any other write in this
+ * app. No invite e-mail is sent — Supabase's default e-mail service isn't
+ * reliable enough to depend on for onboarding real students, so the admin
+ * sets the password directly and passes it to the student themselves. If
+ * any step after creating the auth user fails, that user is deleted so
+ * retrying doesn't leave dangling accounts.
  */
 export async function createStudent(
   organizationId: string,
@@ -32,6 +35,7 @@ export async function createStudent(
   const parsed = createStudentSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
+    password: formData.get("password"),
     phone: formData.get("phone"),
     plan_id: formData.get("plan_id"),
     price: formData.get("price") || undefined,
@@ -49,27 +53,25 @@ export async function createStudent(
   } catch {
     return {
       error:
-        "SUPABASE_SERVICE_ROLE_KEY não está configurada neste ambiente — necessária para convidar novos alunos (ver .env.example).",
+        "SUPABASE_SERVICE_ROLE_KEY não está configurada neste ambiente — necessária para cadastrar novos alunos (ver .env.example).",
     };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    parsed.data.email,
-    {
-      data: { full_name: parsed.data.full_name, phone: parsed.data.phone || null },
-      redirectTo: `${siteUrl}/auth/confirm?next=/set-password`,
-    },
-  );
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: parsed.data.email,
+    password: parsed.data.password,
+    email_confirm: true,
+    user_metadata: { full_name: parsed.data.full_name, phone: parsed.data.phone || null },
+  });
 
-  if (inviteError || !invited?.user) {
-    if (inviteError?.message?.toLowerCase().includes("already been registered")) {
+  if (createError || !created?.user) {
+    if (createError?.message?.toLowerCase().includes("already")) {
       return { error: "Já existe uma conta com esse e-mail." };
     }
-    return { error: inviteError?.message ?? "Erro ao convidar aluno." };
+    return { error: createError?.message ?? "Erro ao cadastrar aluno." };
   }
 
-  const newUserId = invited.user.id;
+  const newUserId = created.user.id;
   const supabase = await createClient();
 
   const { error: memberError } = await supabase.from("organization_members").insert({

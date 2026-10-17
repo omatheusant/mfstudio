@@ -142,18 +142,19 @@ Duas triggers de defesa em profundidade, no mesmo espírito de
   simultaneamente — a Fase 5 depende disso para calcular sessões
   disponíveis sem ambiguidade.
 
-### Convite de aluno (por que a service role aparece aqui)
+### Criação de aluno (por que a service role aparece aqui)
 
 `auth.users` não tem um equivalente RLS — criar um novo usuário de
 autenticação só é possível via `auth.admin.*`, que exige a service role
 key. `features/students/actions.ts#createStudent` é o único lugar do
 app que usa `src/lib/supabase/admin.ts`, e só para a chamada
-`inviteUserByEmail`; toda gravação seguinte (`organization_members`,
-`students`, `subscriptions`) usa a sessão normal do `OWNER`/`ADMIN` que
-está cadastrando o aluno, passando por RLS como qualquer outra escrita.
-Se qualquer passo depois do convite falhar, o usuário de autenticação
-recém-criado é removido (`auth.admin.deleteUser`) para não deixar contas
-órfãs.
+`createUser` (e-mail + senha definidos pelo `OWNER`/`ADMIN` que está
+cadastrando, `email_confirm: true`, sem envio de e-mail — ver nota em
+`docs/business-rules.md`); toda gravação seguinte (`organization_members`,
+`students`, `subscriptions`) usa a sessão normal do `OWNER`/`ADMIN`,
+passando por RLS como qualquer outra escrita. Se qualquer passo depois
+da criação do usuário falhar, o usuário de autenticação recém-criado é
+removido (`auth.admin.deleteUser`) para não deixar contas órfãs.
 
 ## Esquema (Fase 5)
 
@@ -366,9 +367,10 @@ categoria correspondente.
 
 Desde a Fase 4, também semeia 4 alunos com assinaturas (um por plano
 Ouro/Bronze Alternativo/Prata/Diamante) — inseridos diretamente como
-`postgres`, não através do fluxo de convite real (que precisa da service
+`postgres`, não através do fluxo real de criação (que precisa da service
 role key rodando fora do SQL Editor). Alunos cadastrados pela UI depois
-do seed passam pelo fluxo de convite de verdade.
+do seed passam pelo fluxo real (`auth.admin.createUser`, ver
+`docs/database.md#criação-de-aluno-por-que-a-service-role-aparece-aqui`).
 
 Desde a Fase 5, também semeia algumas reservas futuras (para os alunos
 com plano ativo, num horário compatível com sua categoria) — inseridas

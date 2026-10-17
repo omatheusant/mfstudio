@@ -78,10 +78,14 @@ Em **Alunos** você vê a lista completa, com busca por nome/e-mail e
 filtro por status (ativos/inativos).
 
 ### Cadastrar um aluno novo
-Clique em **Novo aluno** e preencha nome, e-mail, telefone (opcional),
-plano e data de início. Ao confirmar, o aluno recebe automaticamente um
-**e-mail de convite** para definir a própria senha e acessar o portal
-dele. É preciso ter pelo menos um plano criado antes.
+Clique em **Novo aluno** e preencha nome, e-mail, **uma senha** (mínimo
+8 caracteres), telefone (opcional), plano e data de início. É preciso
+ter pelo menos um plano criado antes.
+
+> **Nenhum e-mail é enviado automaticamente.** Depois de cadastrar,
+> anote o e-mail e a senha que você definiu e envie para o aluno (por
+> WhatsApp, por exemplo) — é assim que ele vai acessar o portal dele
+> pela primeira vez.
 
 ### Página do aluno
 Clicando em um aluno da lista, você tem abas para:

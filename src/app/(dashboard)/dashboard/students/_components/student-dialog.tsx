@@ -49,7 +49,7 @@ export function StudentDialog({
       const result = await boundAction(prevState, formData);
       if (result?.success) {
         toast.success(
-          "Aluno cadastrado. Um convite por e-mail foi enviado para ele definir a senha.",
+          "Aluno cadastrado. Envie o e-mail e a senha a ele para o primeiro acesso.",
         );
         setOpen(false);
       }
@@ -65,8 +65,9 @@ export function StudentDialog({
         <DialogHeader>
           <DialogTitle>Novo aluno</DialogTitle>
           <DialogDescription>
-            O aluno recebe um convite por e-mail para definir a própria
-            senha e acessar a plataforma.
+            Defina um e-mail e uma senha para o aluno. Nenhum e-mail é
+            enviado — você mesmo deve passar esses dados a ele para o
+            primeiro acesso.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-4">
@@ -83,6 +84,22 @@ export function StudentDialog({
               <Label htmlFor="student-phone">Telefone</Label>
               <Input id="student-phone" name="phone" />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="student-password">Senha</Label>
+            <Input
+              id="student-password"
+              name="password"
+              type="text"
+              minLength={8}
+              placeholder="Mínimo de 8 caracteres"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Anote essa senha — você vai precisar enviá-la ao aluno
+              junto com o e-mail.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -137,7 +154,7 @@ export function StudentDialog({
               }
             />
             <Button type="submit" disabled={pending || plans.length === 0}>
-              {pending ? "Enviando convite..." : "Cadastrar e convidar"}
+              {pending ? "Cadastrando..." : "Cadastrar aluno"}
             </Button>
           </DialogFooter>
         </form>
