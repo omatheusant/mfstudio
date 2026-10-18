@@ -108,7 +108,15 @@ export default async function StudentsPage({
               <label htmlFor="status" className="text-sm font-medium">
                 Status
               </label>
-              <Select name="status" defaultValue={status ?? "ALL"}>
+              <Select
+                name="status"
+                defaultValue={status ?? "ALL"}
+                items={[
+                  { value: "ALL", label: "Todos" },
+                  { value: "ACTIVE", label: "Ativos" },
+                  { value: "INACTIVE", label: "Inativos" },
+                ]}
+              >
                 <SelectTrigger id="status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

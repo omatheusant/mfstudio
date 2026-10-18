@@ -140,7 +140,17 @@ export default async function PaymentsPage({
               <label htmlFor="status" className="text-sm font-medium">
                 Status
               </label>
-              <Select name="status" defaultValue={status ?? "ALL"}>
+              <Select
+                name="status"
+                defaultValue={status ?? "ALL"}
+                items={[
+                  { value: "ALL", label: "Todos" },
+                  { value: "PENDING", label: "Pendentes" },
+                  { value: "OVERDUE", label: "Atrasados" },
+                  { value: "PAID", label: "Pagos" },
+                  { value: "CANCELLED", label: "Cancelados" },
+                ]}
+              >
                 <SelectTrigger id="status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

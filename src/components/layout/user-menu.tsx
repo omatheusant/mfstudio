@@ -35,6 +35,7 @@ export function UserMenu({ email }: { email: string | undefined }) {
         <DropdownMenuSeparator />
         <form action={logout}>
           <DropdownMenuItem
+            nativeButton
             render={
               <button type="submit" className="w-full">
                 <LogOut className="size-4" />

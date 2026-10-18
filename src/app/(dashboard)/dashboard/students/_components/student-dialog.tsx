@@ -105,7 +105,13 @@ export function StudentDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="student-plan">Plano</Label>
-              <Select name="plan_id">
+              <Select
+                name="plan_id"
+                items={plans.map((plan) => ({
+                  value: plan.id,
+                  label: `${plan.name} — ${formatCurrency(plan.price)}`,
+                }))}
+              >
                 <SelectTrigger id="student-plan" className="w-full">
                   <SelectValue placeholder="Selecione um plano" />
                 </SelectTrigger>

@@ -76,7 +76,11 @@ export function ScheduleSlotDialog({
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="slot-day">Dia da semana</Label>
-            <Select name="day_of_week" defaultValue={String(slot?.day_of_week ?? 1)}>
+            <Select
+              name="day_of_week"
+              defaultValue={String(slot?.day_of_week ?? 1)}
+              items={DAY_OF_WEEK_OPTIONS.map((day) => ({ value: String(day.value), label: day.label }))}
+            >
               <SelectTrigger id="slot-day" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -118,6 +122,7 @@ export function ScheduleSlotDialog({
             <Select
               name="schedule_category_id"
               defaultValue={slot?.schedule_category_id}
+              items={categories.map((category) => ({ value: category.id, label: category.name }))}
             >
               <SelectTrigger id="slot-category" className="w-full">
                 <SelectValue placeholder="Selecione uma categoria" />

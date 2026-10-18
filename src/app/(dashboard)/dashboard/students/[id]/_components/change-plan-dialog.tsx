@@ -74,7 +74,13 @@ export function ChangePlanDialog({
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="change-plan-id">Plano</Label>
-            <Select name="plan_id">
+            <Select
+              name="plan_id"
+              items={plans.map((plan) => ({
+                value: plan.id,
+                label: `${plan.name} — ${formatCurrency(plan.price)}`,
+              }))}
+            >
               <SelectTrigger id="change-plan-id" className="w-full">
                 <SelectValue placeholder="Selecione um plano" />
               </SelectTrigger>

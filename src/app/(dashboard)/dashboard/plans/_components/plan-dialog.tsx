@@ -111,7 +111,11 @@ export function PlanDialog({
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="plan-billing-cycle">Ciclo de cobrança</Label>
-              <Select name="billing_cycle" defaultValue={plan?.billing_cycle ?? "MONTHLY"}>
+              <Select
+                name="billing_cycle"
+                defaultValue={plan?.billing_cycle ?? "MONTHLY"}
+                items={BILLING_CYCLE_OPTIONS}
+              >
                 <SelectTrigger id="plan-billing-cycle" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -140,7 +144,11 @@ export function PlanDialog({
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="plan-session-period">Período</Label>
-              <Select name="session_period" defaultValue={plan?.session_period ?? "WEEK"}>
+              <Select
+                name="session_period"
+                defaultValue={plan?.session_period ?? "WEEK"}
+                items={SESSION_PERIOD_OPTIONS}
+              >
                 <SelectTrigger id="plan-session-period" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

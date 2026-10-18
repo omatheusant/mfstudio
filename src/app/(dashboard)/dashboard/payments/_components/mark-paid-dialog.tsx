@@ -67,7 +67,7 @@ export function MarkPaidDialog({
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="payment-method">Forma de pagamento</Label>
-            <Select name="payment_method">
+            <Select name="payment_method" items={PAYMENT_METHOD_OPTIONS}>
               <SelectTrigger id="payment-method" className="w-full">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>

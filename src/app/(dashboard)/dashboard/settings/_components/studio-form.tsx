@@ -53,7 +53,7 @@ export function StudioForm({ organization }: { organization: OrganizationRow }) 
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="timezone">Fuso horário</Label>
-        <Select name="timezone" defaultValue={organization.timezone}>
+        <Select name="timezone" defaultValue={organization.timezone} items={TIMEZONE_OPTIONS}>
           <SelectTrigger id="timezone" className="w-full">
             <SelectValue placeholder="Selecione o fuso horário" />
           </SelectTrigger>
