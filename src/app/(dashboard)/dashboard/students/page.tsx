@@ -81,6 +81,16 @@ export default async function StudentsPage({
         />
       </div>
 
+      {activePlans.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Crie um plano em{" "}
+          <Link href="/dashboard/plans" className="underline underline-offset-4">
+            Planos
+          </Link>{" "}
+          antes de cadastrar alunos.
+        </p>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Buscar e filtrar</CardTitle>

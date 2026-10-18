@@ -1,6 +1,7 @@
 "use client";
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -89,8 +90,12 @@ export function PlansTable({
       <CardContent>
         {categories.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Crie uma categoria de horário em Configurações antes de criar
-            planos.
+            Crie uma categoria de horário na aba{" "}
+            <strong>Categorias</strong> de{" "}
+            <Link href="/dashboard/settings" className="underline underline-offset-4">
+              Configurações
+            </Link>{" "}
+            antes de criar planos.
           </p>
         ) : plans.length === 0 ? (
           <p className="text-sm text-muted-foreground">
