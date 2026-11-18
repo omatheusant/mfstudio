@@ -1,3 +1,4 @@
+import { CalendarCheck, CalendarPlus, QrCode, User, Wallet } from "lucide-react";
 import Link from "next/link";
 
 import type { UpcomingBooking } from "@/features/bookings/queries";
@@ -94,32 +95,57 @@ export function StudentHome({
       <div className="grid grid-cols-2 gap-3">
         <Button
           size="lg"
-          className="h-auto py-4"
-          render={<Link href="/dashboard/bookings">Reservar aula</Link>}
+          className="h-auto flex-col gap-1.5 py-4"
+          render={
+            <Link href="/dashboard/bookings">
+              <CalendarPlus className="size-5" />
+              Reservar aula
+            </Link>
+          }
         />
         <Button
           size="lg"
           variant="outline"
-          className="h-auto py-4"
-          render={<Link href="/dashboard/bookings#minhas-reservas">Minhas reservas</Link>}
+          className="h-auto flex-col gap-1.5 py-4"
+          render={
+            <Link href="/dashboard/bookings#minhas-reservas">
+              <CalendarCheck className="size-5" />
+              Minhas reservas
+            </Link>
+          }
         />
         <Button
           size="lg"
           variant="outline"
-          className="h-auto py-4"
-          render={<Link href="/dashboard/bookings#minhas-reservas">Fazer check-in</Link>}
+          className="h-auto flex-col gap-1.5 py-4"
+          render={
+            <Link href="/dashboard/bookings#minhas-reservas">
+              <QrCode className="size-5" />
+              Fazer check-in
+            </Link>
+          }
         />
         <Button
           size="lg"
           variant="outline"
-          className="h-auto py-4"
-          render={<Link href="/dashboard/payments">Pagamentos</Link>}
+          className="h-auto flex-col gap-1.5 py-4"
+          render={
+            <Link href="/dashboard/payments">
+              <Wallet className="size-5" />
+              Pagamentos
+            </Link>
+          }
         />
         <Button
           size="lg"
           variant="outline"
-          className="h-auto py-4 col-span-2"
-          render={<Link href="/dashboard/profile">Meu perfil</Link>}
+          className="h-auto flex-col gap-1.5 py-4 col-span-2"
+          render={
+            <Link href="/dashboard/profile">
+              <User className="size-5" />
+              Meu perfil
+            </Link>
+          }
         />
       </div>
     </div>

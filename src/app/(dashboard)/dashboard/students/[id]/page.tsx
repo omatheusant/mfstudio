@@ -206,7 +206,10 @@ export default async function StudentDetailPage({
               />
             </CardHeader>
             <CardContent>
-              <MyBookingsList bookings={upcomingBookings} />
+              <MyBookingsList
+                bookings={upcomingBookings}
+                emptyMessage="Nenhuma reserva futura."
+              />
             </CardContent>
           </Card>
         </TabsContent>

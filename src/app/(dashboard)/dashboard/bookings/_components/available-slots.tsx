@@ -5,8 +5,10 @@ import { toast } from "sonner";
 
 import { bookForSelf } from "@/features/bookings/actions";
 import type { AvailableSlot } from "@/features/bookings/queries";
+import { getOccupancyTone, OCCUPANCY_INDICATOR_CLASS, OCCUPANCY_TEXT_CLASS } from "@/lib/occupancy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -60,19 +62,27 @@ export function AvailableSlots({
         {slots.map((slot) => {
           const isFull = slot.reserved >= slot.capacity;
           const canBook = slot.compatible && !isFull;
+          const tone = getOccupancyTone(slot.reserved, slot.capacity);
           return (
-            <TableRow key={slot.id}>
+            <TableRow key={slot.id} className={!slot.compatible ? "opacity-60" : undefined}>
               <TableCell className="font-medium">
                 {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
               </TableCell>
               <TableCell className="text-muted-foreground">{slot.category_name}</TableCell>
               <TableCell>
                 {isFull ? (
-                  <Badge variant="secondary">Lotado</Badge>
+                  <Badge variant="destructive">Lotado</Badge>
                 ) : (
-                  <span className="text-sm tabular-nums">
-                    {slot.capacity - slot.reserved} de {slot.capacity}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={(slot.reserved / slot.capacity) * 100}
+                      className="w-16 sm:w-24"
+                      indicatorClassName={OCCUPANCY_INDICATOR_CLASS[tone]}
+                    />
+                    <span className={`text-sm tabular-nums ${OCCUPANCY_TEXT_CLASS[tone]}`}>
+                      {slot.capacity - slot.reserved} vaga{slot.capacity - slot.reserved === 1 ? "" : "s"}
+                    </span>
+                  </div>
                 )}
               </TableCell>
               <TableCell className="text-right">

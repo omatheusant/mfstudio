@@ -44,12 +44,19 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  nativeButton,
+  render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // `render` swaps the rendered root for something like a `<Link>` — not a
+      // real <button> — so Base UI's own keyboard/ARIA button semantics need
+      // to take over instead of assuming a native one is already there.
+      nativeButton={nativeButton ?? !render}
       {...props}
     />
   )

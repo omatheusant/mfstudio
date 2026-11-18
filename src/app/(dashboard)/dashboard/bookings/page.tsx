@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getMemberships, requireUser } from "@/lib/auth/dal";
 import { getAvailableSlotsForStudent, getUpcomingBookingsForStudent } from "@/features/bookings/queries";
 import { getStudentByProfileId } from "@/features/students/queries";
+import { capitalizeFirst } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -88,7 +89,7 @@ export default async function BookingsPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
-              <CardTitle className="capitalize">{dateLabel}</CardTitle>
+              <CardTitle>{capitalizeFirst(dateLabel)}</CardTitle>
               <CardDescription>Horários e vagas disponíveis nesta data.</CardDescription>
             </div>
             <div className="flex items-center gap-2">

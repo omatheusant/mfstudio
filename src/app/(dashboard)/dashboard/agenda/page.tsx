@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getMemberships, requireRole } from "@/lib/auth/dal";
 import { getRoster, getSlotsForDate } from "@/features/bookings/queries";
 import { DAY_OF_WEEK_LABEL } from "@/lib/constants/schedule";
+import { getOccupancyTone, OCCUPANCY_INDICATOR_CLASS, OCCUPANCY_TEXT_CLASS } from "@/lib/occupancy";
+import { capitalizeFirst } from "@/lib/utils";
 import type { DayOfWeek } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,7 +69,7 @@ export default async function AgendaPage({
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Agenda</h1>
-          <p className="text-muted-foreground capitalize">{dateLabel}</p>
+          <p className="text-muted-foreground">{capitalizeFirst(dateLabel)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -105,35 +107,39 @@ export default async function AgendaPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {slots.map((slot, index) => (
-                  <TableRow key={slot.id}>
-                    <TableCell className="font-medium">
-                      {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{slot.category_name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress
-                          value={(slot.reserved / slot.capacity) * 100}
-                          className="w-24"
+                {slots.map((slot, index) => {
+                  const tone = getOccupancyTone(slot.reserved, slot.capacity);
+                  return (
+                    <TableRow key={slot.id}>
+                      <TableCell className="font-medium">
+                        {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{slot.category_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress
+                            value={(slot.reserved / slot.capacity) * 100}
+                            className="w-24"
+                            indicatorClassName={OCCUPANCY_INDICATOR_CLASS[tone]}
+                          />
+                          <span className={`text-sm tabular-nums ${OCCUPANCY_TEXT_CLASS[tone]}`}>
+                            {slot.reserved}/{slot.capacity}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <RosterDialog
+                          roster={rosters[index]}
+                          trigger={
+                            <Button variant="outline" size="sm">
+                              Ver alunos
+                            </Button>
+                          }
                         />
-                        <span className="text-sm tabular-nums">
-                          {slot.reserved}/{slot.capacity}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <RosterDialog
-                        roster={rosters[index]}
-                        trigger={
-                          <Button variant="outline" size="sm">
-                            Ver alunos
-                          </Button>
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { fetchDisplayAgendaAction, fetchDisplayRosterAction } from "@/features/display/actions";
 import type { DisplayRosterEntry, DisplaySlot } from "@/features/display/queries";
+import { getOccupancyTone, OCCUPANCY_INDICATOR_CLASS, OCCUPANCY_TEXT_CLASS } from "@/lib/occupancy";
 import { cn } from "@/lib/utils";
 
 const REFRESH_MS = 20_000;
@@ -16,6 +17,7 @@ function OccupancyBar({ reserved, capacity }: { reserved: number; capacity: numb
   const total = Math.max(capacity, 1);
   const filled = Math.min(reserved, total);
   const blocks = Array.from({ length: total }, (_, i) => i < filled);
+  const tone = getOccupancyTone(reserved, capacity);
 
   return (
     <div className="flex gap-1">
@@ -24,7 +26,7 @@ function OccupancyBar({ reserved, capacity }: { reserved: number; capacity: numb
           key={i}
           className={cn(
             "h-6 w-3 rounded-sm sm:h-8 sm:w-4",
-            isFilled ? "bg-primary" : "bg-muted",
+            isFilled ? OCCUPANCY_INDICATOR_CLASS[tone] : "bg-muted",
           )}
         />
       ))}
@@ -100,34 +102,42 @@ export function DisplayBoard({
             <p className="py-8 text-xl text-muted-foreground">Nenhuma aula hoje.</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {slots.map((slot) => (
-                <li key={slot.slotId}>
-                  <button
-                    onClick={() => selectSlot(slot.slotId)}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-4 rounded-lg border px-4 py-3 text-left transition-colors sm:px-6 sm:py-4",
-                      selectedSlotId === slot.slotId
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted/50",
-                    )}
-                  >
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-xl font-semibold tabular-nums sm:text-3xl">
-                        {slot.startTime.slice(0, 5)}
-                      </span>
-                      <span className="text-sm text-muted-foreground sm:text-lg">
-                        {slot.categoryName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <OccupancyBar reserved={slot.reserved} capacity={slot.capacity} />
-                      <span className="text-lg font-medium tabular-nums sm:text-2xl">
-                        {slot.reserved}/{slot.capacity}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              ))}
+              {slots.map((slot) => {
+                const tone = getOccupancyTone(slot.reserved, slot.capacity);
+                return (
+                  <li key={slot.slotId}>
+                    <button
+                      onClick={() => selectSlot(slot.slotId)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-4 rounded-lg border px-4 py-3 text-left transition-colors sm:px-6 sm:py-4",
+                        selectedSlotId === slot.slotId
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-xl font-semibold tabular-nums sm:text-3xl">
+                          {slot.startTime.slice(0, 5)}
+                        </span>
+                        <span className="text-sm text-muted-foreground sm:text-lg">
+                          {slot.categoryName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <OccupancyBar reserved={slot.reserved} capacity={slot.capacity} />
+                        <span
+                          className={cn(
+                            "text-lg font-medium tabular-nums sm:text-2xl",
+                            OCCUPANCY_TEXT_CLASS[tone],
+                          )}
+                        >
+                          {slot.reserved}/{slot.capacity}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { RosterEntry, SlotOccupancy } from "@/features/bookings/queries";
+import { getOccupancyTone, OCCUPANCY_INDICATOR_CLASS, OCCUPANCY_TEXT_CLASS } from "@/lib/occupancy";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,32 +59,39 @@ export function TodayAgenda({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {slots.map((slot, index) => (
-                <TableRow key={slot.id}>
-                  <TableCell className="font-medium">
-                    {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{slot.category_name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={(slot.reserved / slot.capacity) * 100} className="w-24" />
-                      <span className="text-sm tabular-nums">
-                        {slot.reserved}/{slot.capacity}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <RosterDialog
-                      roster={rosters[index]}
-                      trigger={
-                        <Button variant="outline" size="sm">
-                          Ver alunos
-                        </Button>
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {slots.map((slot, index) => {
+                const tone = getOccupancyTone(slot.reserved, slot.capacity);
+                return (
+                  <TableRow key={slot.id}>
+                    <TableCell className="font-medium">
+                      {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{slot.category_name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={(slot.reserved / slot.capacity) * 100}
+                          className="w-24"
+                          indicatorClassName={OCCUPANCY_INDICATOR_CLASS[tone]}
+                        />
+                        <span className={`text-sm tabular-nums ${OCCUPANCY_TEXT_CLASS[tone]}`}>
+                          {slot.reserved}/{slot.capacity}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <RosterDialog
+                        roster={rosters[index]}
+                        trigger={
+                          <Button variant="outline" size="sm">
+                            Ver alunos
+                          </Button>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { bookForStudent, fetchAvailableSlotsForStudent } from "@/features/bookings/actions";
 import type { AvailableSlot } from "@/features/bookings/queries";
+import { getOccupancyTone, OCCUPANCY_TEXT_CLASS } from "@/lib/occupancy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,6 +99,8 @@ export function NewBookingDialog({
               {slots.map((slot) => {
                 const isFull = slot.reserved >= slot.capacity;
                 const canBook = slot.compatible && !isFull;
+                const vagas = slot.capacity - slot.reserved;
+                const tone = getOccupancyTone(slot.reserved, slot.capacity);
                 return (
                   <li
                     key={slot.id}
@@ -113,10 +116,10 @@ export function NewBookingDialog({
                       {!slot.compatible ? (
                         <Badge variant="secondary">Fora do plano</Badge>
                       ) : isFull ? (
-                        <Badge variant="secondary">Lotado</Badge>
+                        <Badge variant="destructive">Lotado</Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {slot.capacity - slot.reserved} vaga(s)
+                        <span className={`text-xs tabular-nums ${OCCUPANCY_TEXT_CLASS[tone]}`}>
+                          {vagas} vaga{vagas === 1 ? "" : "s"}
                         </span>
                       )}
                       <Button
