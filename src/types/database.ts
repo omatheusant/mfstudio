@@ -629,6 +629,10 @@ export type Database = {
         Args: { p_org_slug: string; p_slot_id: string; p_date?: string };
         Returns: { first_name: string; status: string }[];
       };
+      count_reserved_bookings_for_slots: {
+        Args: { p_organization_id: string; p_date: string; p_schedule_slot_ids: string[] };
+        Returns: { schedule_slot_id: string; reserved: number }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

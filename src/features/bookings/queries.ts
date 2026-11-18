@@ -56,6 +56,14 @@ export async function getSlotsForDate(
   }));
 }
 
+/**
+ * Per-slot RESERVED counts via the RLS-independent `count_reserved_bookings_for_slots`
+ * RPC rather than a raw `bookings` select. A raw select is scoped by
+ * bookings_select_staff_or_self: staff see every row, but a STUDENT caller
+ * sees only their own bookings — so it would under-count for students and
+ * make slots look far emptier than they actually are. The RPC returns only
+ * aggregate counts (never who booked), which is safe for a student to see.
+ */
 async function countReservedBySlot(
   organizationId: string,
   date: string,
@@ -65,13 +73,11 @@ async function countReservedBySlot(
   if (slotIds.length === 0) return counts;
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("schedule_slot_id")
-    .eq("organization_id", organizationId)
-    .eq("date", date)
-    .eq("status", "RESERVED")
-    .in("schedule_slot_id", slotIds);
+  const { data, error } = await supabase.rpc("count_reserved_bookings_for_slots", {
+    p_organization_id: organizationId,
+    p_date: date,
+    p_schedule_slot_ids: slotIds,
+  });
 
   if (error) {
     console.error("[bookings] failed to count reservations:", error.message);
@@ -79,7 +85,7 @@ async function countReservedBySlot(
   }
 
   for (const row of data ?? []) {
-    counts.set(row.schedule_slot_id, (counts.get(row.schedule_slot_id) ?? 0) + 1);
+    counts.set(row.schedule_slot_id, row.reserved);
   }
   return counts;
 }
